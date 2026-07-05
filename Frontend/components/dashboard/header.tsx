@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Bell,ChevronDown } from "lucide-react"
+import { Bell, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -13,6 +13,7 @@ import {
 import { useAuth } from "@/hooks/useAuth"
 import { useRouter } from "next/navigation"
 import { notificationsApi } from "@/lib/api"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 
 interface HeaderProps {
   title: string
@@ -29,7 +30,7 @@ export function Header({ title, subtitle }: HeaderProps) {
       notificationsApi
         .getUnreadCount()
         .then((res) => setUnreadCount(res.unread_count))
-        .catch(() => {}) // silent — don't break the header over a notification count
+        .catch(() => { }) // silent — don't break the header over a notification count
     }
 
     fetchUnreadCount()
@@ -74,9 +75,12 @@ export function Header({ title, subtitle }: HeaderProps) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="flex items-center gap-3 px-3">
-              <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center">
-                <span className="text-sm font-bold text-primary">{getInitials(user?.first_name, user?.last_name)}</span>
-              </div>
+              <Avatar className="w-9 h-9">
+                <AvatarImage src={user?.profile_picture_url || undefined} alt={user?.full_name} />
+                <AvatarFallback className="bg-primary/20 text-primary text-sm font-bold">
+                  {getInitials(user?.first_name, user?.last_name)}
+                </AvatarFallback>
+              </Avatar>
               <div className="hidden md:block text-left">
                 <p className="text-sm font-medium text-foreground">{user?.full_name || user?.first_name || "User"}</p>
                 <p className="text-xs text-muted-foreground capitalize">{user?.kyc_status || ""}</p>

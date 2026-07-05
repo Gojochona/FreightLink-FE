@@ -172,6 +172,7 @@ export interface UserProfile {
   created_at: string;
   carrier_profile?: CarrierProfile | null;
   unread_notifications: number;
+  profile_picture_url: string | null;
 }
 
 export interface UpdateUserProfileRequest {
@@ -308,7 +309,8 @@ export interface Trip {
   accepts_electronics: boolean;
   booking_closes_soon: boolean;
   ticket_verified: boolean;
-  created_at: string;
+  created_at: string; 
+  traveler_avatar: string | null;
 }
 
 export interface PaginatedTripList {
@@ -360,6 +362,7 @@ export interface Booking {
   delivered_at: string | null;
   completed_at: string | null;
   created_at: string;
+  sender_avatar: string | null;
 }
 
 export interface RejectBookingRequest {

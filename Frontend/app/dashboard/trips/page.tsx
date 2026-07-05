@@ -36,6 +36,7 @@ import { tripsApi } from "@/lib/api"
 import { Trip, Booking } from "@/lib/api/types"
 import { useFetch } from "@/hooks/useApi"
 import { useAuth } from "@/hooks/useAuth"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 
 const getTripStatusColor = (status: string) => {
   switch (status) {
@@ -216,11 +217,10 @@ export default function TripsPage() {
         <div className="flex gap-2 border-b border-border">
           <button
             onClick={() => handleTabChange("available")}
-            className={`px-4 py-3 font-medium text-sm transition-colors relative ${
-              activeTab === "available"
+            className={`px-4 py-3 font-medium text-sm transition-colors relative ${activeTab === "available"
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"
-            }`}
+              }`}
           >
             Available Trips
             {activeTab === "available" && (
@@ -230,11 +230,10 @@ export default function TripsPage() {
           <button
             onClick={() => handleTabChange("my-trips")}
             disabled={!user?.is_traveler || myTripsLoading}
-            className={`px-4 py-3 font-medium text-sm transition-colors relative ${
-              activeTab === "my-trips"
+            className={`px-4 py-3 font-medium text-sm transition-colors relative ${activeTab === "my-trips"
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"
-            } ${(!user?.is_traveler || myTripsLoading) ? "cursor-not-allowed opacity-50" : ""}`}
+              } ${(!user?.is_traveler || myTripsLoading) ? "cursor-not-allowed opacity-50" : ""}`}
           >
             My Trips {user?.is_traveler ? `(${filteredTrips.length})` : ""}
             {activeTab === "my-trips" && (
@@ -244,11 +243,10 @@ export default function TripsPage() {
           <button
             onClick={() => handleTabChange("bookings")}
             disabled={!user?.is_traveler || tripBookingsLoading}
-            className={`px-4 py-3 font-medium text-sm transition-colors relative ${
-              activeTab === "bookings"
+            className={`px-4 py-3 font-medium text-sm transition-colors relative ${activeTab === "bookings"
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"
-            } ${(!user?.is_traveler || tripBookingsLoading) ? "cursor-not-allowed opacity-50" : ""}`}
+              } ${(!user?.is_traveler || tripBookingsLoading) ? "cursor-not-allowed opacity-50" : ""}`}
           >
             Bookings on My Trips {user?.is_traveler ? `(${filteredBookings.length})` : ""}
             {activeTab === "bookings" && (
@@ -339,19 +337,21 @@ export default function TripsPage() {
                       {/* Header */}
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                            <MapPin className="w-5 h-5 text-primary" />
-                          </div>
+                          <Avatar className="w-10 h-10">
+                            <AvatarImage src={trip.traveler_avatar || undefined} alt={trip.traveler_name} />
+                            <AvatarFallback className="bg-primary/20 text-primary text-sm font-semibold">
+                              {trip.traveler_name?.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() || "T"}
+                            </AvatarFallback>
+                          </Avatar>
                           <div>
-                            <p className="font-semibold text-foreground">{trip.id.substring(0, 8)}</p>
-                            <p className="text-sm text-muted-foreground">Trip ID</p>
+                            <p className="font-semibold text-foreground">{trip.traveler_name}</p>
+                            <p className="text-xs text-muted-foreground">Trip {trip.id.substring(0, 8)}</p>
                           </div>
                         </div>
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          trip.status === "open"
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${trip.status === "open"
                             ? "bg-success/20 text-success"
                             : "bg-warning/20 text-warning"
-                        }`}>
+                          }`}>
                           {trip.status.charAt(0).toUpperCase() + trip.status.slice(1)}
                         </span>
                       </div>
@@ -433,432 +433,431 @@ export default function TripsPage() {
         {/* Only show traveler tab content if user is a traveler */}
         {user && user.is_traveler && (
           <>
-        {/* MY TRIPS TAB */}
-        {activeTab === "my-trips" && (
-          <div className="space-y-4">
-            {/* Filters and Search */}
-            <div className="glass rounded-2xl p-4">
-              <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-                <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0">
-                  {tripStatusFilters.map((filter) => (
-                    <button
-                      key={filter}
-                      onClick={() => setActiveFilter(filter)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
-                        activeFilter === filter
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-secondary/50 text-muted-foreground hover:text-foreground hover:bg-secondary"
-                      }`}
-                    >
-                      {filter}
-                    </button>
+            {/* MY TRIPS TAB */}
+            {activeTab === "my-trips" && (
+              <div className="space-y-4">
+                {/* Filters and Search */}
+                <div className="glass rounded-2xl p-4">
+                  <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+                    <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0">
+                      {tripStatusFilters.map((filter) => (
+                        <button
+                          key={filter}
+                          onClick={() => setActiveFilter(filter)}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${activeFilter === filter
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-secondary/50 text-muted-foreground hover:text-foreground hover:bg-secondary"
+                            }`}
+                        >
+                          {filter}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-3 w-full md:w-auto">
+                      <div className="relative flex-1 md:w-64">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Search trips..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="pl-10 bg-input border-border text-foreground placeholder:text-muted-foreground"
+                        />
+                      </div>
+                      <Button variant="outline" size="icon" className="border-border text-muted-foreground hover:text-foreground">
+                        <Filter className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Trip Cards */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {filteredTrips.map((trip) => (
+                    <div key={trip.id} className="glass rounded-2xl p-5 glass-hover">
+                      {/* Trip Header */}
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                            <MapPin className="w-5 h-5 text-primary" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-foreground">{trip.id.substring(0, 8)}</p>
+                            <p className="text-sm text-muted-foreground">Travel ID</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${getTripStatusColor(trip.status)}`}>
+                            {trip.status.charAt(0).toUpperCase() + trip.status.slice(1).replace('_', ' ')}
+                          </span>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+                                <MoreVertical className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="bg-popover border-border">
+                              <DropdownMenuItem className="text-foreground focus:bg-accent focus:text-accent-foreground">
+                                <Eye className="w-4 h-4 mr-2" /> View Details
+                              </DropdownMenuItem>
+                              {trip.status === "open" && (
+                                <DropdownMenuItem className="text-foreground focus:bg-accent focus:text-accent-foreground">
+                                  <Edit className="w-4 h-4 mr-2" /> Edit Trip
+                                </DropdownMenuItem>
+                              )}
+                              {trip.status === "open" && (
+                                <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                                  <XCircle className="w-4 h-4 mr-2" /> Cancel Trip
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </div>
+
+                      {/* Route */}
+                      <div className="flex items-center gap-3 mb-4 p-3 rounded-xl bg-secondary/30">
+                        <div className="flex items-center gap-2 flex-1">
+                          <MapPin className="w-4 h-4 text-success" />
+                          <span className="text-sm font-medium text-foreground">{trip.origin_city}</span>
+                        </div>
+                        <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                        <div className="flex items-center gap-2 flex-1 justify-end">
+                          <span className="text-sm font-medium text-foreground">{trip.destination_city}</span>
+                          <MapPin className="w-4 h-4 text-destructive" />
+                        </div>
+                      </div>
+
+                      {/* Details Grid */}
+                      <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
+                        <div className="text-muted-foreground">
+                          <p className="text-foreground font-medium">{trip.total_kg} kg</p>
+                          <p className="text-xs">total capacity</p>
+                        </div>
+                        <div className="text-muted-foreground">
+                          <p className="text-foreground font-medium">{trip.available_kg} kg</p>
+                          <p className="text-xs">available</p>
+                        </div>
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Clock className="w-4 h-4" />
+                          <span className="text-foreground text-xs">{new Date(trip.departure_date).toLocaleDateString()}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Clock className="w-4 h-4" />
+                          <span className="text-foreground text-xs">{new Date(trip.arrival_date).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+
+                      {/* Pricing */}
+                      <div className="p-3 rounded-lg bg-primary/10 mb-4">
+                        <p className="text-xs text-muted-foreground">Price per kg</p>
+                        <p className="text-lg font-bold text-primary">₦{trip.price_per_kg}</p>
+                      </div>
+
+                      {/* View Details Link */}
+                      <Link href={`/dashboard/trips/${trip.id}`} className="block">
+                        <Button variant="outline" className="w-full border-border text-foreground hover:bg-secondary">
+                          View Trip Details
+                        </Button>
+                      </Link>
+                    </div>
                   ))}
                 </div>
-                <div className="flex items-center gap-3 w-full md:w-auto">
-                  <div className="relative flex-1 md:w-64">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search trips..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10 bg-input border-border text-foreground placeholder:text-muted-foreground"
-                    />
+
+                {filteredTrips.length === 0 && (
+                  <div className="glass rounded-2xl p-12 text-center">
+                    <MapPin className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-foreground mb-2">No trips created yet</h3>
+                    <p className="text-muted-foreground mb-4">Create your first trip to start receiving bookings</p>
+                    <Link href="/dashboard/trips/new">
+                      <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Create Trip
+                      </Button>
+                    </Link>
                   </div>
-                  <Button variant="outline" size="icon" className="border-border text-muted-foreground hover:text-foreground">
-                    <Filter className="w-4 h-4" />
-                  </Button>
-                </div>
+                )}
               </div>
-            </div>
+            )}
 
-            {/* Trip Cards */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {filteredTrips.map((trip) => (
-                <div key={trip.id} className="glass rounded-2xl p-5 glass-hover">
-                  {/* Trip Header */}
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                        <MapPin className="w-5 h-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-foreground">{trip.id.substring(0, 8)}</p>
-                        <p className="text-sm text-muted-foreground">Travel ID</p>
-                      </div>
+            {/* BOOKINGS TAB */}
+            {activeTab === "bookings" && (
+              <div className="space-y-6">
+                {/* Search */}
+                <div className="glass rounded-2xl p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search by booking ID, route, or receiver..."
+                        value={bookingSearch}
+                        onChange={(e) => setBookingSearch(e.target.value)}
+                        className="pl-10 bg-input border-border text-foreground placeholder:text-muted-foreground"
+                      />
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${getTripStatusColor(trip.status)}`}>
-                        {trip.status.charAt(0).toUpperCase() + trip.status.slice(1).replace('_', ' ')}
-                      </span>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
-                            <MoreVertical className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="bg-popover border-border">
-                          <DropdownMenuItem className="text-foreground focus:bg-accent focus:text-accent-foreground">
-                            <Eye className="w-4 h-4 mr-2" /> View Details
-                          </DropdownMenuItem>
-                          {trip.status === "open" && (
-                            <DropdownMenuItem className="text-foreground focus:bg-accent focus:text-accent-foreground">
-                              <Edit className="w-4 h-4 mr-2" /> Edit Trip
-                            </DropdownMenuItem>
-                          )}
-                          {trip.status === "open" && (
-                            <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive">
-                              <XCircle className="w-4 h-4 mr-2" /> Cancel Trip
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </div>
-
-                  {/* Route */}
-                  <div className="flex items-center gap-3 mb-4 p-3 rounded-xl bg-secondary/30">
-                    <div className="flex items-center gap-2 flex-1">
-                      <MapPin className="w-4 h-4 text-success" />
-                      <span className="text-sm font-medium text-foreground">{trip.origin_city}</span>
-                    </div>
-                    <ArrowRight className="w-4 h-4 text-muted-foreground" />
-                    <div className="flex items-center gap-2 flex-1 justify-end">
-                      <span className="text-sm font-medium text-foreground">{trip.destination_city}</span>
-                      <MapPin className="w-4 h-4 text-destructive" />
-                    </div>
-                  </div>
-
-                  {/* Details Grid */}
-                  <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
-                    <div className="text-muted-foreground">
-                      <p className="text-foreground font-medium">{trip.total_kg} kg</p>
-                      <p className="text-xs">total capacity</p>
-                    </div>
-                    <div className="text-muted-foreground">
-                      <p className="text-foreground font-medium">{trip.available_kg} kg</p>
-                      <p className="text-xs">available</p>
-                    </div>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Clock className="w-4 h-4" />
-                      <span className="text-foreground text-xs">{new Date(trip.departure_date).toLocaleDateString()}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Clock className="w-4 h-4" />
-                      <span className="text-foreground text-xs">{new Date(trip.arrival_date).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-
-                  {/* Pricing */}
-                  <div className="p-3 rounded-lg bg-primary/10 mb-4">
-                    <p className="text-xs text-muted-foreground">Price per kg</p>
-                    <p className="text-lg font-bold text-primary">₦{trip.price_per_kg}</p>
-                  </div>
-
-                  {/* View Details Link */}
-                  <Link href={`/dashboard/trips/${trip.id}`} className="block">
-                    <Button variant="outline" className="w-full border-border text-foreground hover:bg-secondary">
-                      View Trip Details
+                    <Button variant="outline" size="icon" className="border-border text-muted-foreground hover:text-foreground">
+                      <Filter className="w-4 h-4" />
                     </Button>
-                  </Link>
+                  </div>
                 </div>
-              ))}
-            </div>
 
-            {filteredTrips.length === 0 && (
-              <div className="glass rounded-2xl p-12 text-center">
-                <MapPin className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-foreground mb-2">No trips created yet</h3>
-                <p className="text-muted-foreground mb-4">Create your first trip to start receiving bookings</p>
-                <Link href="/dashboard/trips/new">
-                  <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Create Trip
-                  </Button>
-                </Link>
+                {/* Pending Bookings Section */}
+                {pendingBookings.length > 0 && (
+                  <div className="space-y-3">
+                    <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                      <div className="w-1 h-6 bg-warning rounded"></div>
+                      Pending ({pendingBookings.length})
+                    </h3>
+                    <div className="glass rounded-2xl overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead className="bg-secondary/30">
+                            <tr>
+                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Booking ID</th>
+                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Sender</th>
+                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Receiver</th>
+                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Route</th>
+                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Weight</th>
+                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Price</th>
+                              <th className="text-right px-6 py-4 text-sm font-semibold text-foreground">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-border">
+                            {pendingBookings.map((booking) => (
+                              <tr key={booking.id} className="hover:bg-secondary/20 transition-colors">
+                                <td className="px-6 py-4">
+                                  <span className="font-medium text-foreground text-sm">{booking.id.substring(0, 8)}</span>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <span className="font-medium text-foreground text-sm">{booking.sender_name || 'N/A'}</span>
+                                  <p className="text-xs text-muted-foreground">{booking.sender_phone || 'N/A'}</p>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <div>
+                                    <p className="font-medium text-foreground">{booking.receiver_name}</p>
+                                    <p className="text-xs text-muted-foreground">{booking.receiver_phone}</p>
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <MapPin className="w-4 h-4 text-success" />
+                                    <span className="text-foreground">{booking.trip_route}</span>
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <span className="text-sm text-foreground">{booking.weight_kg} kg</span>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <span className="font-semibold text-foreground">₦{booking.total_price}</span>
+                                </td>
+                                <td className="px-6 py-4 text-right">
+                                  <div className="flex items-center justify-end gap-2">
+                                    <Button onClick={() => handleAcceptBooking(booking.id)} size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                                      <CheckCircle className="w-4 h-4 mr-1" />
+                                      Accept
+                                    </Button>
+                                    <Button onClick={() => handleRejectBooking(booking.id)} size="sm" variant="destructive" className="bg-destructive/90 hover:bg-destructive text-foreground">
+                                      <XCircle className="w-4 h-4 mr-1" />
+                                      Reject
+                                    </Button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Confirmed Bookings Section */}
+                {confirmedBookings.length > 0 && (
+                  <div className="space-y-3">
+                    <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                      <div className="w-1 h-6 bg-success rounded"></div>
+                      Confirmed ({confirmedBookings.length})
+                    </h3>
+                    <div className="glass rounded-2xl overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead className="bg-secondary/30">
+                            <tr>
+                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Booking ID</th>
+                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Receiver</th>
+                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Route</th>
+                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Weight</th>
+                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Price</th>
+                              <th className="text-right px-6 py-4 text-sm font-semibold text-foreground">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-border">
+                            {confirmedBookings.map((booking) => (
+                              <tr key={booking.id} className="hover:bg-secondary/20 transition-colors">
+                                <td className="px-6 py-4">
+                                  <span className="font-medium text-foreground text-sm">{booking.id.substring(0, 8)}</span>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <div>
+                                    <p className="font-medium text-foreground">{booking.receiver_name}</p>
+                                    <p className="text-xs text-muted-foreground">{booking.receiver_phone}</p>
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <MapPin className="w-4 h-4 text-success" />
+                                    <span className="text-foreground">{booking.trip_route}</span>
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <span className="text-sm text-foreground">{booking.weight_kg} kg</span>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <span className="font-semibold text-foreground">₦{booking.total_price}</span>
+                                </td>
+                                <td className="px-6 py-4 text-right">
+                                  <Button size="sm" className="bg-secondary hover:bg-secondary/90 text-foreground">
+                                    <Truck className="w-4 h-4 mr-1" />
+                                    Handover
+                                  </Button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Handed Over Bookings Section */}
+                {handoverBookings.length > 0 && (
+                  <div className="space-y-3">
+                    <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                      <div className="w-1 h-6 bg-secondary rounded"></div>
+                      Handed Over ({handoverBookings.length})
+                    </h3>
+                    <div className="glass rounded-2xl overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead className="bg-secondary/30">
+                            <tr>
+                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Booking ID</th>
+                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Receiver</th>
+                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Route</th>
+                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Weight</th>
+                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Price</th>
+                              <th className="text-right px-6 py-4 text-sm font-semibold text-foreground">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-border">
+                            {handoverBookings.map((booking) => (
+                              <tr key={booking.id} className="hover:bg-secondary/20 transition-colors">
+                                <td className="px-6 py-4">
+                                  <span className="font-medium text-foreground text-sm">{booking.id.substring(0, 8)}</span>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <div>
+                                    <p className="font-medium text-foreground">{booking.receiver_name}</p>
+                                    <p className="text-xs text-muted-foreground">{booking.receiver_phone}</p>
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <MapPin className="w-4 h-4 text-success" />
+                                    <span className="text-foreground">{booking.trip_route}</span>
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <span className="text-sm text-foreground">{booking.weight_kg} kg</span>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <span className="font-semibold text-foreground">₦{booking.total_price}</span>
+                                </td>
+                                <td className="px-6 py-4 text-right">
+                                  <Button size="sm" className="bg-info hover:bg-info/90 text-foreground">
+                                    <Truck className="w-4 h-4 mr-1" />
+                                    In Transit
+                                  </Button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* In Transit Bookings Section */}
+                {inTransitBookings.length > 0 && (
+                  <div className="space-y-3">
+                    <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                      <div className="w-1 h-6 bg-info rounded"></div>
+                      In Transit ({inTransitBookings.length})
+                    </h3>
+                    <div className="glass rounded-2xl overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead className="bg-secondary/30">
+                            <tr>
+                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Booking ID</th>
+                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Receiver</th>
+                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Route</th>
+                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Weight</th>
+                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Price</th>
+                              <th className="text-right px-6 py-4 text-sm font-semibold text-foreground">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-border">
+                            {inTransitBookings.map((booking) => (
+                              <tr key={booking.id} className="hover:bg-secondary/20 transition-colors">
+                                <td className="px-6 py-4">
+                                  <span className="font-medium text-foreground text-sm">{booking.id.substring(0, 8)}</span>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <div>
+                                    <p className="font-medium text-foreground">{booking.receiver_name}</p>
+                                    <p className="text-xs text-muted-foreground">{booking.receiver_phone}</p>
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <MapPin className="w-4 h-4 text-success" />
+                                    <span className="text-foreground">{booking.trip_route}</span>
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <span className="text-sm text-foreground">{booking.weight_kg} kg</span>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <span className="font-semibold text-foreground">₦{booking.total_price}</span>
+                                </td>
+                                <td className="px-6 py-4 text-right">
+                                  <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                                    <CheckCircle className="w-4 h-4 mr-1" />
+                                    Deliver
+                                  </Button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {filteredBookings.length === 0 && (
+                  <div className="glass rounded-2xl p-12 text-center">
+                    <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-foreground mb-2">No bookings on your trips</h3>
+                    <p className="text-muted-foreground">When senders book your trips, they will appear here</p>
+                  </div>
+                )}
               </div>
             )}
-          </div>
+          </>
         )}
-
-        {/* BOOKINGS TAB */}
-        {activeTab === "bookings" && (
-          <div className="space-y-6">
-            {/* Search */}
-            <div className="glass rounded-2xl p-4">
-              <div className="flex items-center gap-3">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search by booking ID, route, or receiver..."
-                    value={bookingSearch}
-                    onChange={(e) => setBookingSearch(e.target.value)}
-                    className="pl-10 bg-input border-border text-foreground placeholder:text-muted-foreground"
-                  />
-                </div>
-                <Button variant="outline" size="icon" className="border-border text-muted-foreground hover:text-foreground">
-                  <Filter className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-
-            {/* Pending Bookings Section */}
-            {pendingBookings.length > 0 && (
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                  <div className="w-1 h-6 bg-warning rounded"></div>
-                  Pending ({pendingBookings.length})
-                </h3>
-                <div className="glass rounded-2xl overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-secondary/30">
-                        <tr>
-                          <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Booking ID</th>
-                          <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Sender</th>
-                          <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Receiver</th>
-                          <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Route</th>
-                          <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Weight</th>
-                          <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Price</th>
-                          <th className="text-right px-6 py-4 text-sm font-semibold text-foreground">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border">
-                        {pendingBookings.map((booking) => (
-                          <tr key={booking.id} className="hover:bg-secondary/20 transition-colors">
-                            <td className="px-6 py-4">
-                              <span className="font-medium text-foreground text-sm">{booking.id.substring(0, 8)}</span>
-                            </td>
-                            <td className="px-6 py-4">
-                              <span className="font-medium text-foreground text-sm">{booking.sender_name || 'N/A'}</span>
-                               <p className="text-xs text-muted-foreground">{booking.sender_phone || 'N/A'}</p>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div>
-                                <p className="font-medium text-foreground">{booking.receiver_name}</p>
-                                <p className="text-xs text-muted-foreground">{booking.receiver_phone}</p>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-2 text-sm">
-                                <MapPin className="w-4 h-4 text-success" />
-                                <span className="text-foreground">{booking.trip_route}</span>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <span className="text-sm text-foreground">{booking.weight_kg} kg</span>
-                            </td>
-                            <td className="px-6 py-4">
-                              <span className="font-semibold text-foreground">₦{booking.total_price}</span>
-                            </td>
-                            <td className="px-6 py-4 text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                <Button onClick={() => handleAcceptBooking(booking.id)} size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                                  <CheckCircle className="w-4 h-4 mr-1" />
-                                  Accept
-                                </Button>
-                                <Button onClick={() => handleRejectBooking(booking.id)} size="sm" variant="destructive" className="bg-destructive/90 hover:bg-destructive text-foreground">
-                                  <XCircle className="w-4 h-4 mr-1" />
-                                  Reject
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Confirmed Bookings Section */}
-            {confirmedBookings.length > 0 && (
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                  <div className="w-1 h-6 bg-success rounded"></div>
-                  Confirmed ({confirmedBookings.length})
-                </h3>
-                <div className="glass rounded-2xl overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-secondary/30">
-                        <tr>
-                          <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Booking ID</th>
-                          <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Receiver</th>
-                          <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Route</th>
-                          <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Weight</th>
-                          <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Price</th>
-                          <th className="text-right px-6 py-4 text-sm font-semibold text-foreground">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border">
-                        {confirmedBookings.map((booking) => (
-                          <tr key={booking.id} className="hover:bg-secondary/20 transition-colors">
-                            <td className="px-6 py-4">
-                              <span className="font-medium text-foreground text-sm">{booking.id.substring(0, 8)}</span>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div>
-                                <p className="font-medium text-foreground">{booking.receiver_name}</p>
-                                <p className="text-xs text-muted-foreground">{booking.receiver_phone}</p>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-2 text-sm">
-                                <MapPin className="w-4 h-4 text-success" />
-                                <span className="text-foreground">{booking.trip_route}</span>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <span className="text-sm text-foreground">{booking.weight_kg} kg</span>
-                            </td>
-                            <td className="px-6 py-4">
-                              <span className="font-semibold text-foreground">₦{booking.total_price}</span>
-                            </td>
-                            <td className="px-6 py-4 text-right">
-                              <Button size="sm" className="bg-secondary hover:bg-secondary/90 text-foreground">
-                                <Truck className="w-4 h-4 mr-1" />
-                                Handover
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Handed Over Bookings Section */}
-            {handoverBookings.length > 0 && (
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                  <div className="w-1 h-6 bg-secondary rounded"></div>
-                  Handed Over ({handoverBookings.length})
-                </h3>
-                <div className="glass rounded-2xl overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-secondary/30">
-                        <tr>
-                          <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Booking ID</th>
-                          <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Receiver</th>
-                          <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Route</th>
-                          <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Weight</th>
-                          <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Price</th>
-                          <th className="text-right px-6 py-4 text-sm font-semibold text-foreground">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border">
-                        {handoverBookings.map((booking) => (
-                          <tr key={booking.id} className="hover:bg-secondary/20 transition-colors">
-                            <td className="px-6 py-4">
-                              <span className="font-medium text-foreground text-sm">{booking.id.substring(0, 8)}</span>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div>
-                                <p className="font-medium text-foreground">{booking.receiver_name}</p>
-                                <p className="text-xs text-muted-foreground">{booking.receiver_phone}</p>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-2 text-sm">
-                                <MapPin className="w-4 h-4 text-success" />
-                                <span className="text-foreground">{booking.trip_route}</span>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <span className="text-sm text-foreground">{booking.weight_kg} kg</span>
-                            </td>
-                            <td className="px-6 py-4">
-                              <span className="font-semibold text-foreground">₦{booking.total_price}</span>
-                            </td>
-                            <td className="px-6 py-4 text-right">
-                              <Button size="sm" className="bg-info hover:bg-info/90 text-foreground">
-                                <Truck className="w-4 h-4 mr-1" />
-                                In Transit
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* In Transit Bookings Section */}
-            {inTransitBookings.length > 0 && (
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                  <div className="w-1 h-6 bg-info rounded"></div>
-                  In Transit ({inTransitBookings.length})
-                </h3>
-                <div className="glass rounded-2xl overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-secondary/30">
-                        <tr>
-                          <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Booking ID</th>
-                          <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Receiver</th>
-                          <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Route</th>
-                          <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Weight</th>
-                          <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Price</th>
-                          <th className="text-right px-6 py-4 text-sm font-semibold text-foreground">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border">
-                        {inTransitBookings.map((booking) => (
-                          <tr key={booking.id} className="hover:bg-secondary/20 transition-colors">
-                            <td className="px-6 py-4">
-                              <span className="font-medium text-foreground text-sm">{booking.id.substring(0, 8)}</span>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div>
-                                <p className="font-medium text-foreground">{booking.receiver_name}</p>
-                                <p className="text-xs text-muted-foreground">{booking.receiver_phone}</p>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-2 text-sm">
-                                <MapPin className="w-4 h-4 text-success" />
-                                <span className="text-foreground">{booking.trip_route}</span>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <span className="text-sm text-foreground">{booking.weight_kg} kg</span>
-                            </td>
-                            <td className="px-6 py-4">
-                              <span className="font-semibold text-foreground">₦{booking.total_price}</span>
-                            </td>
-                            <td className="px-6 py-4 text-right">
-                              <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                                <CheckCircle className="w-4 h-4 mr-1" />
-                                Deliver
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {filteredBookings.length === 0 && (
-              <div className="glass rounded-2xl p-12 text-center">
-                <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-foreground mb-2">No bookings on your trips</h3>
-                <p className="text-muted-foreground">When senders book your trips, they will appear here</p>
-              </div>
-            )}
-          </div>
-        )}
-        </>
-      )}
       </div>
 
       {/* Activate Traveler Modal */}
@@ -873,7 +872,7 @@ export default function TripsPage() {
           router.refresh()
         }}
       />
-      
+
       <RejectionReasonModal
         open={rejectionModalOpen}
         bookingId={rejectingBookingId || ""}
