@@ -42,17 +42,12 @@ export function Header({ title, subtitle }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-4">
-        {/* Search */}
-        <div className="relative hidden md:block">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search..."
-            className="w-64 pl-10 bg-input border-border text-foreground placeholder:text-muted-foreground"
-          />
-        </div>
-
         {/* Notifications */}
-        <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground">
+        <Button variant="ghost" 
+          size="icon"
+          className="relative text-muted-foreground hover:text-foreground"
+          onClick={() => router.push("/dashboard/notifications")}
+        >
           <Bell className="w-5 h-5" />
           <span className="absolute -top-1 -right-1 w-5 h-5 bg-accent text-accent-foreground text-xs font-bold rounded-full flex items-center justify-center">
             {user?.unread_notifications || 0}
@@ -74,20 +69,20 @@ export function Header({ title, subtitle }: HeaderProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48 bg-popover border-border">
-            <DropdownMenuItem 
+            <DropdownMenuItem
               onClick={() => router.push("/dashboard/profile")}
               className="text-foreground focus:bg-accent focus:text-accent-foreground cursor-pointer"
             >
               Profile
             </DropdownMenuItem>
-            <DropdownMenuItem 
+            <DropdownMenuItem
               onClick={() => router.push("/dashboard/settings")}
               className="text-foreground focus:bg-accent focus:text-accent-foreground cursor-pointer"
             >
               Settings
             </DropdownMenuItem>
             <DropdownMenuSeparator className="bg-border" />
-            <DropdownMenuItem 
+            <DropdownMenuItem
               onClick={handleLogout}
               className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"
             >

@@ -114,13 +114,13 @@ export default function TripsPage() {
 
   // Fetch user's created trips (traveler only — guarded so senders don't
   // fire a request that's meaningless for their account)
-  const { data: tripsData } = useFetch(
+  const { data: tripsData, loading: myTripsLoading } = useFetch(
     () => (user?.is_traveler ? tripsApi.getMyTrips() : Promise.resolve({ results: [], count: 0, next: null, previous: null })),
     [user?.is_traveler]
   )
 
   // Fetch bookings on user's trips (carrier view, traveler only)
-  const { data: tripBookingsData } = useFetch(
+  const { data: tripBookingsData, loading: tripBookingsLoading } = useFetch(
     () => (user?.is_traveler ? tripsApi.getMyTripsBookings() : Promise.resolve([])),
     [user?.is_traveler]
   )
@@ -229,11 +229,12 @@ export default function TripsPage() {
           </button>
           <button
             onClick={() => handleTabChange("my-trips")}
+            disabled={myTripsLoading}
             className={`px-4 py-3 font-medium text-sm transition-colors relative ${
               activeTab === "my-trips"
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"
-            }`}
+            } ${(myTripsLoading) ? "cursor-not-allowed opacity-50" : ""}`}
           >
             My Trips {user?.is_traveler ? `(${filteredTrips.length})` : ""}
             {activeTab === "my-trips" && (
@@ -242,11 +243,12 @@ export default function TripsPage() {
           </button>
           <button
             onClick={() => handleTabChange("bookings")}
+            disabled={tripBookingsLoading}
             className={`px-4 py-3 font-medium text-sm transition-colors relative ${
               activeTab === "bookings"
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"
-            }`}
+            } ${(tripBookingsLoading) ? "cursor-not-allowed opacity-50" : ""}`}
           >
             Bookings on My Trips {user?.is_traveler ? `(${filteredBookings.length})` : ""}
             {activeTab === "bookings" && (
