@@ -1,8 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Bell, Search, ChevronDown } from "lucide-react"
-import { Input } from "@/components/ui/input"
+import { Bell,ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
