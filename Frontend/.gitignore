@@ -1,0 +1,16 @@
+.next/
+.env
+.env.local
+node_modules/
+*.pyc
+*.pyo
+.pytest_cache/
+staticfiles/
+media/
+.coverage
+.zip
+redis-7.2.4/
+htmlcov/
+db.sqlite3
+.DS_Store
+.tar.gz

@@ -1,0 +1,101 @@
+"use client"
+
+import { Bell, Search, ChevronDown } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { useAuth } from "@/hooks/useAuth"
+import { useRouter } from "next/navigation"
+
+interface HeaderProps {
+  title: string
+  subtitle?: string
+}
+
+export function Header({ title, subtitle }: HeaderProps) {
+  const { user, logout } = useAuth()
+  const router = useRouter()
+
+  const getInitials = (firstName?: string, lastName?: string) => {
+    if (!firstName && !lastName) return "U"
+    const first = firstName?.[0]?.toUpperCase() || ""
+    const last = lastName?.[0]?.toUpperCase() || ""
+    return `${first}${last}`.slice(0, 2) || "U"
+  }
+
+  const handleLogout = () => {
+    logout()
+    router.push("/login")
+  }
+
+  return (
+    <header className="h-16 border-b border-border flex items-center justify-between px-6 bg-card/50 backdrop-blur-sm sticky top-0 z-30">
+      <div>
+        <h1 className="text-xl font-bold text-foreground">{title}</h1>
+        {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
+      </div>
+
+      <div className="flex items-center gap-4">
+        {/* Search */}
+        <div className="relative hidden md:block">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Search..."
+            className="w-64 pl-10 bg-input border-border text-foreground placeholder:text-muted-foreground"
+          />
+        </div>
+
+        {/* Notifications */}
+        <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground">
+          <Bell className="w-5 h-5" />
+          <span className="absolute -top-1 -right-1 w-5 h-5 bg-accent text-accent-foreground text-xs font-bold rounded-full flex items-center justify-center">
+            {user?.unread_notifications || 0}
+          </span>
+        </Button>
+
+        {/* User Menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="flex items-center gap-3 px-3">
+              <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center">
+                <span className="text-sm font-bold text-primary">{getInitials(user?.first_name, user?.last_name)}</span>
+              </div>
+              <div className="hidden md:block text-left">
+                <p className="text-sm font-medium text-foreground">{user?.full_name || user?.first_name || "User"}</p>
+                <p className="text-xs text-muted-foreground capitalize">{user?.kyc_status || ""}</p>
+              </div>
+              <ChevronDown className="w-4 h-4 text-muted-foreground hidden md:block" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48 bg-popover border-border">
+            <DropdownMenuItem 
+              onClick={() => router.push("/dashboard/profile")}
+              className="text-foreground focus:bg-accent focus:text-accent-foreground cursor-pointer"
+            >
+              Profile
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => router.push("/dashboard/settings")}
+              className="text-foreground focus:bg-accent focus:text-accent-foreground cursor-pointer"
+            >
+              Settings
+            </DropdownMenuItem>
+            <DropdownMenuSeparator className="bg-border" />
+            <DropdownMenuItem 
+              onClick={handleLogout}
+              className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"
+            >
+              Logout
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </header>
+  )
+}
