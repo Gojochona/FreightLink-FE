@@ -864,10 +864,6 @@ export default function TripsPage() {
         isOpen={showActivateTraveler}
         onClose={() => {
           setShowActivateTraveler(false)
-          // Redirect back to dashboard if they close without activating
-          if (user && !user.is_traveler) {
-            router.push('/dashboard')
-          }
         }}
         onActivated={() => {
           setShowActivateTraveler(false)
