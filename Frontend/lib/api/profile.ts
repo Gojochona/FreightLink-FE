@@ -33,11 +33,11 @@ export const profileApi = {
 
   /**
    * Upload user avatar/profile picture
-   * @param file - Image file (jpg, png, or webp, max 5MB)
+   * @param file - avatar file (jpg, png, or webp, max 5MB)
    */
   async uploadAvatar(file: File): Promise<AvatarResponse> {
     const formData = new FormData();
-    formData.append('image', file);
+    formData.append('avatar', file);
 
     return apiClient.post<AvatarResponse>(
       '/api/v1/auth/profile/upload-avatar/',
@@ -89,7 +89,7 @@ export const profileApi = {
    */
   async getKycStatus(): Promise<KYCStatusResponse> {
     return apiClient.get<KYCStatusResponse>(
-      '/api/v1/kyc/status/'
+      '/api/v1/auth/kyc/status/'
     );
   },
 
@@ -98,7 +98,7 @@ export const profileApi = {
    */
   async uploadKycDocuments(formData: FormData): Promise<void> {
     return apiClient.post(
-      '/api/v1/kyc/upload/',
+      '/api/v1/auth/kyc/upload/',
       formData,
       {
         skipContentType: true,
