@@ -229,12 +229,12 @@ export default function TripsPage() {
           </button>
           <button
             onClick={() => handleTabChange("my-trips")}
-            disabled={myTripsLoading}
+            disabled={!user?.is_traveler || myTripsLoading}
             className={`px-4 py-3 font-medium text-sm transition-colors relative ${
               activeTab === "my-trips"
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"
-            } ${(myTripsLoading) ? "cursor-not-allowed opacity-50" : ""}`}
+            } ${(!user?.is_traveler || myTripsLoading) ? "cursor-not-allowed opacity-50" : ""}`}
           >
             My Trips {user?.is_traveler ? `(${filteredTrips.length})` : ""}
             {activeTab === "my-trips" && (
@@ -243,12 +243,12 @@ export default function TripsPage() {
           </button>
           <button
             onClick={() => handleTabChange("bookings")}
-            disabled={tripBookingsLoading}
+            disabled={!user?.is_traveler || tripBookingsLoading}
             className={`px-4 py-3 font-medium text-sm transition-colors relative ${
               activeTab === "bookings"
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"
-            } ${(tripBookingsLoading) ? "cursor-not-allowed opacity-50" : ""}`}
+            } ${(!user?.is_traveler || tripBookingsLoading) ? "cursor-not-allowed opacity-50" : ""}`}
           >
             Bookings on My Trips {user?.is_traveler ? `(${filteredBookings.length})` : ""}
             {activeTab === "bookings" && (
