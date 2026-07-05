@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Bell, Search, ChevronDown } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -12,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useAuth } from "@/hooks/useAuth"
 import { useRouter } from "next/navigation"
+import { notificationsApi } from "@/lib/api"
 
 interface HeaderProps {
   title: string
@@ -21,6 +23,20 @@ interface HeaderProps {
 export function Header({ title, subtitle }: HeaderProps) {
   const { user, logout } = useAuth()
   const router = useRouter()
+  const [unreadCount, setUnreadCount] = useState(0)
+
+  useEffect(() => {
+    const fetchUnreadCount = () => {
+      notificationsApi
+        .getUnreadCount()
+        .then((res) => setUnreadCount(res.unread_count))
+        .catch(() => {}) // silent — don't break the header over a notification count
+    }
+
+    fetchUnreadCount()
+    const interval = setInterval(fetchUnreadCount, 30000) // poll every 30s
+    return () => clearInterval(interval)
+  }, [])
 
   const getInitials = (firstName?: string, lastName?: string) => {
     if (!firstName && !lastName) return "U"
@@ -42,16 +58,17 @@ export function Header({ title, subtitle }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-4">
-        {/* Notifications */}
-        <Button variant="ghost" 
+        <Button variant="ghost"
           size="icon"
           className="relative text-muted-foreground hover:text-foreground"
           onClick={() => router.push("/dashboard/notifications")}
         >
           <Bell className="w-5 h-5" />
-          <span className="absolute -top-1 -right-1 w-5 h-5 bg-accent text-accent-foreground text-xs font-bold rounded-full flex items-center justify-center">
-            {user?.unread_notifications || 0}
-          </span>
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 w-5 h-5 bg-accent text-accent-foreground text-xs font-bold rounded-full flex items-center justify-center">
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
+          )}
         </Button>
 
         {/* User Menu */}
