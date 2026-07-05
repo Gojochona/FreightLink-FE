@@ -41,7 +41,7 @@ const chartData = [
 
 const fundingMethods = [
   { id: "card", name: "Debit Card", icon: CreditCard, description: "Pay securely with your card via Paystack" },
-  { id: "bank", name: "Bank Transfer", icon: Building2, description: "Transfer from your bank account" },
+  // { id: "bank", name: "Bank Transfer", icon: Building2, description: "Transfer from your bank account" },
 ]
 
 const formatCurrency = (value: number) => {
@@ -60,14 +60,14 @@ export default function WalletPage() {
   const { data: walletData, loading: walletLoading } = useFetch(() => walletApi.getWallet(), [])
   const { data: transactions, loading: transLoading } = useFetch(() => walletApi.getTransactions(), [])
   const { execute: initiateDeposit, loading: depositLoading } = useApi(walletApi.initiateDeposit)
-  
+
   // Filter transactions based on search
-  const filteredTransactions = Array.isArray(transactions) 
-    ? transactions.filter((txn: any) => 
-        txn.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        txn.id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        txn.reference?.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+  const filteredTransactions = Array.isArray(transactions)
+    ? transactions.filter((txn: any) =>
+      txn.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      txn.id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      txn.reference?.toLowerCase().includes(searchQuery.toLowerCase())
+    )
     : []
 
   return (
@@ -256,9 +256,8 @@ export default function WalletPage() {
                   >
                     <div className="flex items-center gap-4">
                       <div
-                        className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                          isCredit ? "bg-success/20" : "bg-destructive/20"
-                        }`}
+                        className={`w-10 h-10 rounded-lg flex items-center justify-center ${isCredit ? "bg-success/20" : "bg-destructive/20"
+                          }`}
                       >
                         {isCredit ? (
                           <ArrowDownLeft className="w-5 h-5 text-success" />
@@ -279,21 +278,19 @@ export default function WalletPage() {
                     </div>
                     <div className="text-right">
                       <p
-                        className={`font-semibold ${
-                          isCredit ? "text-success" : "text-destructive"
-                        }`}
+                        className={`font-semibold ${isCredit ? "text-success" : "text-destructive"
+                          }`}
                       >
                         {isCredit ? "+" : "-"}
                         {formatCurrency(parseFloat(txn.amount))}
                       </p>
                       <span
-                        className={`text-xs px-2 py-0.5 rounded-full ${
-                          txn.status === "success"
+                        className={`text-xs px-2 py-0.5 rounded-full ${txn.status === "success"
                             ? "bg-success/20 text-success"
                             : txn.status === "pending"
-                            ? "bg-warning/20 text-warning"
-                            : "bg-destructive/20 text-destructive"
-                        }`}
+                              ? "bg-warning/20 text-warning"
+                              : "bg-destructive/20 text-destructive"
+                          }`}
                       >
                         {txn.status.charAt(0).toUpperCase() + txn.status.slice(1)}
                       </span>
@@ -417,16 +414,29 @@ export default function WalletPage() {
                   </div>
                 )}
 
-                <Button
-                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-                  onClick={() => {
-                    setShowFundModal(false)
-                    setSelectedMethod(null)
-                    setFundAmount("")
-                  }}
-                >
-                  {selectedMethod === "bank" ? "I have made the transfer" : "Proceed to Payment"}
-                </Button>
+                {selectedMethod === "card" && (
+                  <Button
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                    disabled={!fundAmount || Number(fundAmount) <= 0 || depositLoading}
+                    onClick={async () => {
+                      try {
+                        const res = await initiateDeposit(fundAmount)
+                        window.location.href = res.payment_url
+                      } catch (err) {
+                        console.error("Deposit initiation failed:", err)
+                      }
+                    }}
+                  >
+                    {depositLoading ? (
+                      <>
+                        <Loader className="w-4 h-4 mr-2 animate-spin" />
+                        Redirecting to Paystack...
+                      </>
+                    ) : (
+                      "Proceed to Payment"
+                    )}
+                  </Button>
+                )}
               </div>
             )}
           </div>
