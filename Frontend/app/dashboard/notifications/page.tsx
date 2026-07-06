@@ -38,6 +38,8 @@ const getNotificationIcon = (type: string) => {
     kyc_approved: CheckCircle2,
     kyc_rejected: AlertTriangle,
     trip_expiring_soon: AlertTriangle,
+    escrow_held: Wallet,
+    wallet_deposit: Wallet,
   }
   return typeMap[type] || Bell
 }

@@ -52,6 +52,8 @@ export enum NotificationType {
   DELIVERY_CONFIRMED = 'delivery_confirmed',
   ESCROW_RELEASED = 'escrow_released',
   ESCROW_REFUNDED = 'escrow_refunded',
+  ESCROW_HELD = 'escrow_held',         
+  WALLET_DEPOSIT = 'wallet_deposit',
   KYC_APPROVED = 'kyc_approved',
   KYC_REJECTED = 'kyc_rejected',
   TRIP_EXPIRING_SOON = 'trip_expiring_soon',
