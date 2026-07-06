@@ -95,6 +95,9 @@ export default function TripsPage() {
     to_location: "",
     max_price_per_kg: undefined as number | undefined,
   })
+  const [bookingFilter, setBookingFilter] = useState<"confirmed" | "pending" | "item_handed_over" | "in_transit">("confirmed")
+  const [actioningId, setActioningId] = useState<string | null>(null)
+
 
   // Switching to a traveler-only tab as a non-traveler prompts activation
   // instead of silently showing nothing.
@@ -121,7 +124,7 @@ export default function TripsPage() {
   )
 
   // Fetch bookings on user's trips (carrier view, traveler only)
-  const { data: tripBookingsData, loading: tripBookingsLoading } = useFetch(
+  const { data: tripBookingsData, loading: tripBookingsLoading, refetch: refetchTripBookings } = useFetch(
     () => (user?.is_traveler ? tripsApi.getMyTripsBookings() : Promise.resolve([])),
     [user?.is_traveler]
   )
@@ -148,6 +151,9 @@ export default function TripsPage() {
     return matchesSearch
   })
 
+  const activeFilteredBookings = filteredBookings.filter(b => b.status === bookingFilter)
+
+
   // Group bookings by status for easier viewing
   const pendingBookings = filteredBookings.filter(b => b.status === "pending")
   const confirmedBookings = filteredBookings.filter(b => b.status === "confirmed")
@@ -155,13 +161,17 @@ export default function TripsPage() {
   const inTransitBookings = filteredBookings.filter(b => b.status === "in_transit")
 
   const handleAcceptBooking = async (bookingId: string) => {
+    if (actioningId) return  // guard against double-clicks across any in-flight action
+    setActioningId(bookingId)
     try {
       await tripsApi.acceptBooking(bookingId)
       showSuccess("Booking accepted successfully!")
-      // Optionally refetch bookings
+      refetchTripBookings()
     } catch (error) {
       console.error("Error accepting booking:", error)
       showError("Failed to accept booking. Please try again.")
+    } finally {
+      setActioningId(null)
     }
   }
 
@@ -177,12 +187,57 @@ export default function TripsPage() {
       showSuccess("Booking rejected successfully!")
       setRejectionModalOpen(false)
       setRejectingBookingId(null)
-      // Optionally refetch bookings
+      refetchTripBookings()
     } catch (error) {
       console.error("Error rejecting booking:", error)
       showError("Failed to reject booking. Please try again.")
     } finally {
       setIsRejectingLoading(false)
+    }
+  }
+
+  const handleHandover = async (bookingId: string) => {
+    if (actioningId) return
+    setActioningId(bookingId)
+    try {
+      await tripsApi.confirmHandover(bookingId)
+      showSuccess("Handover confirmed!")
+      refetchTripBookings()
+    } catch (error) {
+      console.error("Error confirming handover:", error)
+      showError("Failed to confirm handover. Please try again.")
+    } finally {
+      setActioningId(null)
+    }
+  }
+
+  const handleMarkInTransit = async (bookingId: string) => {
+    if (actioningId) return
+    setActioningId(bookingId)
+    try {
+      await tripsApi.markInTransit(bookingId)
+      showSuccess("Marked as in transit!")
+      refetchTripBookings()
+    } catch (error) {
+      console.error("Error marking in transit:", error)
+      showError("Failed to update status. Please try again.")
+    } finally {
+      setActioningId(null)
+    }
+  }
+
+  const handleInitiateDelivery = async (bookingId: string) => {
+    if (actioningId) return
+    setActioningId(bookingId)
+    try {
+      await tripsApi.initiateDelivery(bookingId)
+      showSuccess("Delivery OTP sent to receiver!")
+      refetchTripBookings()
+    } catch (error) {
+      console.error("Error initiating delivery:", error)
+      showError("Failed to send delivery OTP. Please try again.")
+    } finally {
+      setActioningId(null)
     }
   }
 
@@ -582,7 +637,6 @@ export default function TripsPage() {
             {/* BOOKINGS TAB */}
             {activeTab === "bookings" && (
               <div className="space-y-6">
-                {/* Search */}
                 <div className="glass rounded-2xl p-4">
                   <div className="flex items-center gap-3">
                     <div className="relative flex-1">
@@ -594,35 +648,62 @@ export default function TripsPage() {
                         className="pl-10 bg-input border-border text-foreground placeholder:text-muted-foreground"
                       />
                     </div>
-                    <Button variant="outline" size="icon" className="border-border text-muted-foreground hover:text-foreground">
-                      <Filter className="w-4 h-4" />
-                    </Button>
                   </div>
                 </div>
 
-                {/* Pending Bookings Section */}
-                {pendingBookings.length > 0 && (
-                  <div className="space-y-3">
-                    <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                      <div className="w-1 h-6 bg-warning rounded"></div>
-                      Pending ({pendingBookings.length})
+                {/* Filter pills with counts — Confirmed first/default so the most actionable work is front and center */}
+                <div className="flex gap-2 flex-wrap">
+                  {([
+                    { key: "confirmed", label: "Confirmed", count: confirmedBookings.length, dot: "bg-success" },
+                    { key: "pending", label: "Pending", count: pendingBookings.length, dot: "bg-warning" },
+                    { key: "item_handed_over", label: "Handed Over", count: handoverBookings.length, dot: "bg-secondary" },
+                    { key: "in_transit", label: "In Transit", count: inTransitBookings.length, dot: "bg-info" },
+                  ] as const).map((f) => (
+                    <button
+                      key={f.key}
+                      onClick={() => setBookingFilter(f.key)}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${bookingFilter === f.key
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-secondary/50 text-muted-foreground hover:text-foreground hover:bg-secondary"
+                        }`}
+                    >
+                      <span className={`w-2 h-2 rounded-full ${f.dot}`} />
+                      {f.label} ({f.count})
+                    </button>
+                  ))}
+                </div>
+
+                {activeFilteredBookings.length === 0 ? (
+                  <div className="glass rounded-2xl p-12 text-center">
+                    <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-foreground mb-2">
+                      No {bookingFilter.replace('_', ' ')} bookings
                     </h3>
-                    <div className="glass rounded-2xl overflow-hidden">
-                      <div className="overflow-x-auto">
-                        <table className="w-full">
-                          <thead className="bg-secondary/30">
-                            <tr>
-                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Booking ID</th>
-                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Sender</th>
-                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Receiver</th>
-                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Route</th>
-                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Weight</th>
-                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Price</th>
-                              <th className="text-right px-6 py-4 text-sm font-semibold text-foreground">Actions</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-border">
-                            {pendingBookings.map((booking) => (
+                    <p className="text-muted-foreground">
+                      {bookingFilter === "pending"
+                        ? "New booking requests will appear here"
+                        : "Bookings will move here as they progress"}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="glass rounded-2xl overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-secondary/30">
+                          <tr>
+                            <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Booking ID</th>
+                            <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Sender</th>
+                            <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Receiver</th>
+                            <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Route</th>
+                            <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Weight</th>
+                            <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Price</th>
+                            <th className="text-right px-6 py-4 text-sm font-semibold text-foreground">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border">
+                          {activeFilteredBookings.map((booking) => {
+                            const isActioning = actioningId === booking.id
+                            return (
                               <tr key={booking.id} className="hover:bg-secondary/20 transition-colors">
                                 <td className="px-6 py-4">
                                   <span className="font-medium text-foreground text-sm">{booking.id.substring(0, 8)}</span>
@@ -642,10 +723,8 @@ export default function TripsPage() {
                                   </div>
                                 </td>
                                 <td className="px-6 py-4">
-                                  <div>
-                                    <p className="font-medium text-foreground">{booking.receiver_name}</p>
-                                    <p className="text-xs text-muted-foreground">{booking.receiver_phone}</p>
-                                  </div>
+                                  <p className="font-medium text-foreground">{booking.receiver_name}</p>
+                                  <p className="text-xs text-muted-foreground">{booking.receiver_phone}</p>
                                 </td>
                                 <td className="px-6 py-4">
                                   <div className="flex items-center gap-2 text-sm">
@@ -653,215 +732,74 @@ export default function TripsPage() {
                                     <span className="text-foreground">{booking.trip_route}</span>
                                   </div>
                                 </td>
-                                <td className="px-6 py-4">
-                                  <span className="text-sm text-foreground">{booking.weight_kg} kg</span>
-                                </td>
-                                <td className="px-6 py-4">
-                                  <span className="font-semibold text-foreground">₦{booking.total_price}</span>
-                                </td>
+                                <td className="px-6 py-4"><span className="text-sm text-foreground">{booking.weight_kg} kg</span></td>
+                                <td className="px-6 py-4"><span className="font-semibold text-foreground">₦{booking.total_price}</span></td>
                                 <td className="px-6 py-4 text-right">
                                   <div className="flex items-center justify-end gap-2">
-                                    <Button onClick={() => handleAcceptBooking(booking.id)} size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                                      <CheckCircle className="w-4 h-4 mr-1" />
-                                      Accept
-                                    </Button>
-                                    <Button onClick={() => handleRejectBooking(booking.id)} size="sm" variant="destructive" className="bg-destructive/90 hover:bg-destructive text-foreground">
-                                      <XCircle className="w-4 h-4 mr-1" />
-                                      Reject
-                                    </Button>
+                                    {booking.status === "pending" && (
+                                      <>
+                                        <Button
+                                          onClick={() => handleAcceptBooking(booking.id)}
+                                          disabled={isActioning}
+                                          size="sm"
+                                          className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                                        >
+                                          <CheckCircle className="w-4 h-4 mr-1" />
+                                          {isActioning ? "Accepting..." : "Accept"}
+                                        </Button>
+                                        <Button
+                                          onClick={() => handleRejectBooking(booking.id)}
+                                          disabled={isActioning}
+                                          size="sm"
+                                          variant="destructive"
+                                          className="bg-destructive/90 hover:bg-destructive text-foreground"
+                                        >
+                                          <XCircle className="w-4 h-4 mr-1" />
+                                          Reject
+                                        </Button>
+                                      </>
+                                    )}
+                                    {booking.status === "confirmed" && (
+                                      <Button
+                                        onClick={() => handleHandover(booking.id)}
+                                        disabled={isActioning}
+                                        size="sm"
+                                        className="bg-secondary hover:bg-secondary/90 text-foreground"
+                                      >
+                                        <Truck className="w-4 h-4 mr-1" />
+                                        {isActioning ? "Confirming..." : "Handover"}
+                                      </Button>
+                                    )}
+                                    {booking.status === "item_handed_over" && (
+                                      <Button
+                                        onClick={() => handleMarkInTransit(booking.id)}
+                                        disabled={isActioning}
+                                        size="sm"
+                                        className="bg-info hover:bg-info/90 text-foreground"
+                                      >
+                                        <Truck className="w-4 h-4 mr-1" />
+                                        {isActioning ? "Updating..." : "In Transit"}
+                                      </Button>
+                                    )}
+                                    {booking.status === "in_transit" && (
+                                      <Button
+                                        onClick={() => handleInitiateDelivery(booking.id)}
+                                        disabled={isActioning}
+                                        size="sm"
+                                        className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                                      >
+                                        <CheckCircle className="w-4 h-4 mr-1" />
+                                        {isActioning ? "Sending OTP..." : "Deliver"}
+                                      </Button>
+                                    )}
                                   </div>
                                 </td>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
+                            )
+                          })}
+                        </tbody>
+                      </table>
                     </div>
-                  </div>
-                )}
-
-                {/* Confirmed Bookings Section */}
-                {confirmedBookings.length > 0 && (
-                  <div className="space-y-3">
-                    <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                      <div className="w-1 h-6 bg-success rounded"></div>
-                      Confirmed ({confirmedBookings.length})
-                    </h3>
-                    <div className="glass rounded-2xl overflow-hidden">
-                      <div className="overflow-x-auto">
-                        <table className="w-full">
-                          <thead className="bg-secondary/30">
-                            <tr>
-                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Booking ID</th>
-                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Receiver</th>
-                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Route</th>
-                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Weight</th>
-                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Price</th>
-                              <th className="text-right px-6 py-4 text-sm font-semibold text-foreground">Actions</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-border">
-                            {confirmedBookings.map((booking) => (
-                              <tr key={booking.id} className="hover:bg-secondary/20 transition-colors">
-                                <td className="px-6 py-4">
-                                  <span className="font-medium text-foreground text-sm">{booking.id.substring(0, 8)}</span>
-                                </td>
-                                <td className="px-6 py-4">
-                                  <div>
-                                    <p className="font-medium text-foreground">{booking.receiver_name}</p>
-                                    <p className="text-xs text-muted-foreground">{booking.receiver_phone}</p>
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4">
-                                  <div className="flex items-center gap-2 text-sm">
-                                    <MapPin className="w-4 h-4 text-success" />
-                                    <span className="text-foreground">{booking.trip_route}</span>
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4">
-                                  <span className="text-sm text-foreground">{booking.weight_kg} kg</span>
-                                </td>
-                                <td className="px-6 py-4">
-                                  <span className="font-semibold text-foreground">₦{booking.total_price}</span>
-                                </td>
-                                <td className="px-6 py-4 text-right">
-                                  <Button size="sm" className="bg-secondary hover:bg-secondary/90 text-foreground">
-                                    <Truck className="w-4 h-4 mr-1" />
-                                    Handover
-                                  </Button>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Handed Over Bookings Section */}
-                {handoverBookings.length > 0 && (
-                  <div className="space-y-3">
-                    <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                      <div className="w-1 h-6 bg-secondary rounded"></div>
-                      Handed Over ({handoverBookings.length})
-                    </h3>
-                    <div className="glass rounded-2xl overflow-hidden">
-                      <div className="overflow-x-auto">
-                        <table className="w-full">
-                          <thead className="bg-secondary/30">
-                            <tr>
-                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Booking ID</th>
-                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Receiver</th>
-                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Route</th>
-                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Weight</th>
-                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Price</th>
-                              <th className="text-right px-6 py-4 text-sm font-semibold text-foreground">Actions</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-border">
-                            {handoverBookings.map((booking) => (
-                              <tr key={booking.id} className="hover:bg-secondary/20 transition-colors">
-                                <td className="px-6 py-4">
-                                  <span className="font-medium text-foreground text-sm">{booking.id.substring(0, 8)}</span>
-                                </td>
-                                <td className="px-6 py-4">
-                                  <div>
-                                    <p className="font-medium text-foreground">{booking.receiver_name}</p>
-                                    <p className="text-xs text-muted-foreground">{booking.receiver_phone}</p>
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4">
-                                  <div className="flex items-center gap-2 text-sm">
-                                    <MapPin className="w-4 h-4 text-success" />
-                                    <span className="text-foreground">{booking.trip_route}</span>
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4">
-                                  <span className="text-sm text-foreground">{booking.weight_kg} kg</span>
-                                </td>
-                                <td className="px-6 py-4">
-                                  <span className="font-semibold text-foreground">₦{booking.total_price}</span>
-                                </td>
-                                <td className="px-6 py-4 text-right">
-                                  <Button size="sm" className="bg-info hover:bg-info/90 text-foreground">
-                                    <Truck className="w-4 h-4 mr-1" />
-                                    In Transit
-                                  </Button>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* In Transit Bookings Section */}
-                {inTransitBookings.length > 0 && (
-                  <div className="space-y-3">
-                    <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                      <div className="w-1 h-6 bg-info rounded"></div>
-                      In Transit ({inTransitBookings.length})
-                    </h3>
-                    <div className="glass rounded-2xl overflow-hidden">
-                      <div className="overflow-x-auto">
-                        <table className="w-full">
-                          <thead className="bg-secondary/30">
-                            <tr>
-                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Booking ID</th>
-                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Receiver</th>
-                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Route</th>
-                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Weight</th>
-                              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Price</th>
-                              <th className="text-right px-6 py-4 text-sm font-semibold text-foreground">Actions</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-border">
-                            {inTransitBookings.map((booking) => (
-                              <tr key={booking.id} className="hover:bg-secondary/20 transition-colors">
-                                <td className="px-6 py-4">
-                                  <span className="font-medium text-foreground text-sm">{booking.id.substring(0, 8)}</span>
-                                </td>
-                                <td className="px-6 py-4">
-                                  <div>
-                                    <p className="font-medium text-foreground">{booking.receiver_name}</p>
-                                    <p className="text-xs text-muted-foreground">{booking.receiver_phone}</p>
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4">
-                                  <div className="flex items-center gap-2 text-sm">
-                                    <MapPin className="w-4 h-4 text-success" />
-                                    <span className="text-foreground">{booking.trip_route}</span>
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4">
-                                  <span className="text-sm text-foreground">{booking.weight_kg} kg</span>
-                                </td>
-                                <td className="px-6 py-4">
-                                  <span className="font-semibold text-foreground">₦{booking.total_price}</span>
-                                </td>
-                                <td className="px-6 py-4 text-right">
-                                  <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                                    <CheckCircle className="w-4 h-4 mr-1" />
-                                    Deliver
-                                  </Button>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {filteredBookings.length === 0 && (
-                  <div className="glass rounded-2xl p-12 text-center">
-                    <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-foreground mb-2">No bookings on your trips</h3>
-                    <p className="text-muted-foreground">When senders book your trips, they will appear here</p>
                   </div>
                 )}
               </div>

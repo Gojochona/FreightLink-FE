@@ -6,6 +6,8 @@ import { Header } from "@/components/dashboard/header"
 import { AvatarUploadModal } from "@/components/AvatarUploadModal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { mutate } from 'swr'
+import { CURRENT_USER_KEY } from '@/hooks/useCurrentUser'
 import {
   User,
   Mail,
@@ -519,9 +521,11 @@ export default function ProfilePage() {
       {/* Avatar Upload Modal */}
       <AvatarUploadModal
         isOpen={showAvatarModal}
-        currentAvatarUrl={profile?.profile_picture_url || undefined}
         onClose={() => setShowAvatarModal(false)}
-        onSuccess={handleAvatarSuccess}
+        onSuccess={(url) => {
+          setShowAvatarModal(false)
+          mutate(CURRENT_USER_KEY)  // pushes the fresh avatar to every component instantly, header included
+          handleAvatarSuccess}}
       />
     </>
   )
