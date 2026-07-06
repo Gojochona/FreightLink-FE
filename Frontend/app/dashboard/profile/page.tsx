@@ -107,18 +107,16 @@ export default function ProfilePage() {
           {/* Profile Card */}
           <div className="glass rounded-2xl p-6 text-center">
             <div className="relative inline-block mb-4">
-              <div className="w-24 h-24 rounded-full bg-primary/20 flex items-center justify-center mx-auto overflow-hidden">
-                {profile?.profile_picture_url ? (
-                  <Avatar className="w-9 h-9">
-                    <AvatarImage src={profile?.profile_picture_url || undefined} alt={profile?.full_name} />
-                    <AvatarFallback className="bg-primary/20 text-primary text-sm font-bold">
-                      {getInitials(profile?.first_name, profile?.last_name)}
-                    </AvatarFallback>
-                  </Avatar>
-                ) : (
-                  <User className="w-12 h-12 text-primary" />
-                )}
-              </div>
+              <Avatar className="w-24 h-24">
+                <AvatarImage
+                  src={profile?.profile_picture_url || undefined}
+                  alt={profile?.full_name}
+                  className="object-cover"
+                />
+                <AvatarFallback className="bg-primary/20 text-primary text-2xl font-bold">
+                  {getInitials(profile?.first_name, profile?.last_name)}
+                </AvatarFallback>
+              </Avatar>
               <button
                 onClick={() => setShowAvatarModal(true)}
                 className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition"
