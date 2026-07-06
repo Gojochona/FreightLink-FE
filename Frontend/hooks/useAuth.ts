@@ -14,6 +14,14 @@ export function useAuth() {
   const login = useCallback(async (email: string, password: string) => {
     setError(null);
     try {
+      // Wipe any previous user's cached profile *before* we do anything
+      // else. Without this, the old profile can still be sitting in the
+      // SWR cache (dedupingInterval keeps it from being refetched for up
+      // to a minute), so as soon as the new tokens make hasToken truthy,
+      // any mounted component reading /auth/me would briefly render the
+      // previous person's data instead of the new one's.
+      await globalMutate(CURRENT_USER_KEY, undefined, false);
+
       const response = await authApi.login({ email, password });
       ApiClient.setTokens(response.access, response.refresh);
       const freshUser = await authApi.getProfile();
@@ -27,7 +35,8 @@ export function useAuth() {
 
   const logout = useCallback(() => {
     ApiClient.clearTokens();
-    globalMutate(CURRENT_USER_KEY, null, false);
+    // Clear rather than leave the old value in place.
+    globalMutate(CURRENT_USER_KEY, undefined, false);
   }, []);
 
   const updateProfile = useCallback(async (data: any) => {

@@ -133,10 +133,17 @@ export const tripsApi = {
   },
 
   /**
-   * Confirm physical handover of item
+   * Confirm physical handover of item.
+   * A photo is required — the sender confirms first (proving they handed
+   * the item over), then the traveler confirms receipt (proving they now
+   * have it). Returns whether both sides have now confirmed.
    */
-  async confirmHandover(bookingId: string): Promise<void> {
-    return apiClient.post(`/api/v1/trips/bookings/${bookingId}/confirm-handover/`, {});
+  async confirmHandover(bookingId: string, photo: File): Promise<{ detail: string; handover_complete: boolean }> {
+    const formData = new FormData();
+    formData.append('photo', photo);
+    return apiClient.post(`/api/v1/trips/bookings/${bookingId}/confirm-handover/`, formData, {
+      skipContentType: true,
+    });
   },
 
   /**

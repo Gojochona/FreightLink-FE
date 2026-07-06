@@ -345,6 +345,14 @@ export interface CreateBookingRequest {
   sender_confirmed_legal: boolean;
 }
 
+export interface HandoverState {
+  sender_confirmed: boolean;
+  sender_photo: string | null;
+  traveler_confirmed: boolean;
+  traveler_photo: string | null;
+  is_complete: boolean;
+}
+
 export interface Booking {
   id: string;
   trip: string;
@@ -360,6 +368,7 @@ export interface Booking {
   status: BookingStatus;
   item_declaration: ItemDeclaration | null;
   needs_last_mile_delivery: boolean;
+  handover: HandoverState;
   confirmed_at: string | null;
   handed_over_at: string | null;
   delivered_at: string | null;

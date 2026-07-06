@@ -7,9 +7,7 @@ import { Eye, EyeOff, Truck, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
-import { authApi } from "@/lib/api"
-import { ApiClient } from "@/lib/api/client"
-import { useApi } from "@/hooks/useApi"
+import { useAuth } from "@/hooks/useAuth"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -18,8 +16,9 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [rememberMe, setRememberMe] = useState(false)
   const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false)
 
-  const { execute: login, loading } = useApi(authApi.login)
+  const { login } = useAuth()
 
   return (
     <div className="min-h-screen gradient-bg flex items-center justify-center p-4">
@@ -61,15 +60,21 @@ export default function LoginPage() {
               return
             }
 
+            setLoading(true)
             try {
-              const response = await login({ email, password })
-              ApiClient.setTokens(response.access, response.refresh)
+              // Awaiting this fully means the profile cache is already
+              // populated with the new user's data by the time we
+              // navigate, so the dashboard never has a chance to render
+              // stale data from whoever was logged in before.
+              await login(email, password)
               if (rememberMe) {
                 localStorage.setItem("rememberMe", "true")
               }
               router.push("/dashboard")
             } catch (err) {
               setError(err instanceof Error ? err.message : "Login failed. Please try again.")
+            } finally {
+              setLoading(false)
             }
           }}>
             <div className="space-y-2">

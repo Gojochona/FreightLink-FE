@@ -13,7 +13,8 @@ import {
   MoreVertical,
   Eye,
   XCircle,
-  AlertTriangle
+  AlertTriangle,
+  Truck,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -25,6 +26,7 @@ import { tripsApi } from "@/lib/api"
 import { Booking, BookingStatus } from "@/lib/api/types"
 import { useFetch } from "@/hooks/useApi"
 import { CreateDisputeModal } from "@/components/dashboard/create-dispute-modal"
+import { HandoverConfirmModal } from "@/components/dashboard/handover-confirm-modal"
 
 const getBookingStatusColor = (status: BookingStatus | string) => {
   switch (status) {
@@ -56,6 +58,7 @@ export default function BookingsPage() {
   const [activeFilter, setActiveFilter] = useState("All")
   const [disputeModalOpen, setDisputeModalOpen] = useState(false)
   const [selectedBookingForDispute, setSelectedBookingForDispute] = useState<string | null>(null)
+  const [handoverModalBookingId, setHandoverModalBookingId] = useState<string | null>(null)
 
   // Fetch user's bookings (bookings they placed on OTHER trips)
   const { data: bookingsData, loading: bookingsLoading, refetch: refetchBookings } = useFetch(() => tripsApi.listBookings(), [])
@@ -190,6 +193,19 @@ export default function BookingsPage() {
                                 <XCircle className="w-4 h-4 mr-2" /> Cancel Booking
                               </DropdownMenuItem>
                             )}
+                            {booking.status === "confirmed" && !booking.handover?.sender_confirmed && (
+                              <DropdownMenuItem
+                                className="text-foreground focus:bg-accent focus:text-accent-foreground"
+                                onClick={() => setHandoverModalBookingId(booking.id)}
+                              >
+                                <Truck className="w-4 h-4 mr-2" /> Confirm Handover
+                              </DropdownMenuItem>
+                            )}
+                            {booking.status === "confirmed" && booking.handover?.sender_confirmed && (
+                              <DropdownMenuItem disabled className="text-muted-foreground">
+                                <Truck className="w-4 h-4 mr-2" /> Awaiting traveler receipt
+                              </DropdownMenuItem>
+                            )}
                             {(booking.status === "delivered" || booking.status === "in_transit" || booking.status === "completed") && (
                               <DropdownMenuItem
                                 className="text-warning focus:bg-warning/10 focus:text-warning"
@@ -228,6 +244,16 @@ export default function BookingsPage() {
             setSelectedBookingForDispute(null)
           }}
           onDisputeCreated={handleDisputeCreated}
+        />
+      )}
+
+      {handoverModalBookingId && (
+        <HandoverConfirmModal
+          isOpen={!!handoverModalBookingId}
+          bookingId={handoverModalBookingId}
+          role="sender"
+          onClose={() => setHandoverModalBookingId(null)}
+          onConfirmed={() => refetchBookings()}
         />
       )}
     </>

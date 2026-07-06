@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { Header } from "@/components/dashboard/header"
 import { ActivateTravelerModal } from "@/components/dashboard/activate-traveler-modal"
 import { RejectionReasonModal } from "@/components/dashboard/RejectionReasonModal"
+import { HandoverConfirmModal } from "@/components/dashboard/handover-confirm-modal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/useToast"
@@ -90,6 +91,7 @@ export default function TripsPage() {
   const [rejectionModalOpen, setRejectionModalOpen] = useState(false)
   const [rejectingBookingId, setRejectingBookingId] = useState<string | null>(null)
   const [isRejectingLoading, setIsRejectingLoading] = useState(false)
+  const [handoverModalBookingId, setHandoverModalBookingId] = useState<string | null>(null)
   const [availableSearch, setAvailableSearch] = useState({
     from_location: "",
     to_location: "",
@@ -193,21 +195,6 @@ export default function TripsPage() {
       showError("Failed to reject booking. Please try again.")
     } finally {
       setIsRejectingLoading(false)
-    }
-  }
-
-  const handleHandover = async (bookingId: string) => {
-    if (actioningId) return
-    setActioningId(bookingId)
-    try {
-      await tripsApi.confirmHandover(bookingId)
-      showSuccess("Handover confirmed!")
-      refetchTripBookings()
-    } catch (error) {
-      console.error("Error confirming handover:", error)
-      showError("Failed to confirm handover. Please try again.")
-    } finally {
-      setActioningId(null)
     }
   }
 
@@ -760,15 +747,21 @@ export default function TripsPage() {
                                       </>
                                     )}
                                     {booking.status === "confirmed" && (
-                                      <Button
-                                        onClick={() => handleHandover(booking.id)}
-                                        disabled={isActioning}
-                                        size="sm"
-                                        className="bg-secondary hover:bg-secondary/90 text-foreground"
-                                      >
-                                        <Truck className="w-4 h-4 mr-1" />
-                                        {isActioning ? "Confirming..." : "Handover"}
-                                      </Button>
+                                      booking.handover?.sender_confirmed ? (
+                                        <Button
+                                          onClick={() => setHandoverModalBookingId(booking.id)}
+                                          disabled={isActioning}
+                                          size="sm"
+                                          className="bg-secondary hover:bg-secondary/90 text-foreground"
+                                        >
+                                          <Truck className="w-4 h-4 mr-1" />
+                                          Confirm Receipt
+                                        </Button>
+                                      ) : (
+                                        <span className="text-xs text-muted-foreground italic">
+                                          Awaiting sender handover
+                                        </span>
+                                      )
                                     )}
                                     {booking.status === "item_handed_over" && (
                                       <Button
@@ -831,6 +824,16 @@ export default function TripsPage() {
         }}
         isLoading={isRejectingLoading}
       />
+
+      {handoverModalBookingId && (
+        <HandoverConfirmModal
+          isOpen={!!handoverModalBookingId}
+          bookingId={handoverModalBookingId}
+          role="traveler"
+          onClose={() => setHandoverModalBookingId(null)}
+          onConfirmed={() => refetchTripBookings()}
+        />
+      )}
     </>
   )
 }
