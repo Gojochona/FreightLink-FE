@@ -20,9 +20,11 @@ import {
 } from "lucide-react"
 import { notificationsApi, NotificationListResponse } from "@/lib/api/notifications"
 import { useToast } from "@/hooks/useToast"
+import { useRouter } from "next/dist/client/components/navigation"
+import type { Notification } from "@/lib/api/types"
 
 const getNotificationIcon = (type: string) => {
-  const typeMap: {[key: string]: typeof Truck} = {
+  const typeMap: { [key: string]: typeof Truck } = {
     booking_received: Package,
     booking_confirmed: CheckCircle2,
     booking_rejected: AlertTriangle,
@@ -81,7 +83,7 @@ const formatTimeAgo = (dateString: string) => {
   if (hours < 24) return `${hours}h ago`
   const days = Math.floor(hours / 24)
   if (days < 7) return `${days}d ago`
-  
+
   return date.toLocaleDateString()
 }
 
@@ -93,6 +95,7 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState(false)
   const [currentPage, setCurrentPage] = useState(0)
   const [listData, setListData] = useState<NotificationListResponse | null>(null)
+  const router = useRouter()
 
   // Map filter to API parameter
   const readParam = filter === "all" ? "all" : filter === "read" ? "true" : "false"
@@ -125,6 +128,28 @@ export default function NotificationsPage() {
     setCurrentPage(0)
   }
 
+
+
+  const handleNotificationClick = (notification: Notification) => {
+    notificationsApi.markAsRead(notification.id).catch(() => { })
+
+    switch (notification.related_object_type) {
+      case "booking":
+        router.push(`/dashboard/bookings/${notification.related_object_id}`)
+        break
+      case "transaction":
+        router.push(`/dashboard/wallet/transactions/${notification.related_object_id}`)
+        break
+      case "trip":
+        router.push(`/dashboard/trips/${notification.related_object_id}`)
+        break
+      default:
+        if (notification.notification_type.startsWith("kyc_")) {
+          router.push("/dashboard/kyc")
+        }
+    }
+  }
+
   const handleMarkAllAsRead = async () => {
     setLoading(true)
     try {
@@ -145,23 +170,6 @@ export default function NotificationsPage() {
     }
   }
 
-  const handleMarkAsRead = async (notificationId: string) => {
-    try {
-      await notificationsApi.markAsRead(notificationId)
-      showSuccess("Notification marked as read")
-      // Refresh current page
-      const response = await notificationsApi.listNotifications({
-        limit: LIMIT,
-        offset,
-        read: readParam,
-      })
-      setListData(response)
-    } catch (error) {
-      console.error("Failed to mark notification as read:", error)
-      showError("Failed to mark notification as read")
-    }
-  }
-
   const notifications = listData?.results || []
   const unreadCount = notifications.filter((n) => !n.is_read).length
   const totalCount = listData?.count || 0
@@ -177,31 +185,28 @@ export default function NotificationsPage() {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => handleFilterChange("all")}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  filter === "all"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary/50 text-muted-foreground hover:text-foreground hover:bg-secondary"
-                }`}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === "all"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary/50 text-muted-foreground hover:text-foreground hover:bg-secondary"
+                  }`}
               >
                 All
               </button>
               <button
                 onClick={() => handleFilterChange("unread")}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  filter === "unread"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary/50 text-muted-foreground hover:text-foreground hover:bg-secondary"
-                }`}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === "unread"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary/50 text-muted-foreground hover:text-foreground hover:bg-secondary"
+                  }`}
               >
                 Unread ({unreadCount})
               </button>
               <button
                 onClick={() => handleFilterChange("read")}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  filter === "read"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary/50 text-muted-foreground hover:text-foreground hover:bg-secondary"
-                }`}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === "read"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary/50 text-muted-foreground hover:text-foreground hover:bg-secondary"
+                  }`}
               >
                 Read
               </button>
@@ -234,19 +239,17 @@ export default function NotificationsPage() {
                 notifications.map((notification) => {
                   const IconComponent = getNotificationIcon(notification.notification_type)
                   const colorClass = getNotificationColor(notification.notification_type)
-                  
+
                   return (
                     <div
                       key={notification.id}
-                      className={`p-4 hover:bg-secondary/30 transition-all cursor-pointer ${
-                        !notification.is_read ? "bg-primary/5" : ""
-                      }`}
-                      onClick={() => handleMarkAsRead(notification.id)}
+                      className={`p-4 hover:bg-secondary/30 transition-all cursor-pointer ${!notification.is_read ? "bg-primary/5" : ""
+                        }`}
+                      onClick={() => handleNotificationClick(notification)}
                     >
                       <div className="flex items-start gap-4">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
-                          getColorClasses(colorClass)
-                        }`}>
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${getColorClasses(colorClass)
+                          }`}>
                           <IconComponent className="w-5 h-5" />
                         </div>
                         <div className="flex-1 min-w-0">

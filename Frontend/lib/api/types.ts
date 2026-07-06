@@ -220,10 +220,11 @@ export interface Wallet {
 export interface WalletTransaction {
   id: string;
   transaction_type: TransactionType;
-  amount: string; // Decimal
+  amount: string;
   status: TransactionStatus;
+  reference: string;             
   description: string;
-  balance_after: string | null; // Decimal
+  balance_after: string | null;
   created_at: string;
 }
 

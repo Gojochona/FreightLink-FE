@@ -47,6 +47,13 @@ export const walletApi = {
   },
 
   /**
+  * Get a single transaction's full detail
+  */
+  async getTransactionDetail(transactionId: string): Promise<WalletTransaction> {
+    return apiClient.get<WalletTransaction>(`/api/v1/wallet/transactions/${transactionId}/`);
+  },
+
+  /**
    * Verify OTP and release escrow
    * Called when carrier confirms delivery
    */

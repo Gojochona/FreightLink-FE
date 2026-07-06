@@ -40,9 +40,8 @@ export const tripsApi = {
       queryParams.append('max_price_per_kg', params.max_price_per_kg.toString());
     if (params?.page) queryParams.append('page', params.page.toString());
 
-    const endpoint = `/api/v1/trips/${
-      queryParams.toString() ? '?' + queryParams.toString() : ''
-    }`;
+    const endpoint = `/api/v1/trips/${queryParams.toString() ? '?' + queryParams.toString() : ''
+      }`;
 
     return apiClient.get<PaginatedTripList>(endpoint);
   },
@@ -76,6 +75,13 @@ export const tripsApi = {
   },
 
   /**
+  * Get a single booking's full detail
+  */
+  async getBookingDetail(bookingId: string): Promise<Booking> {
+    return apiClient.get<Booking>(`/api/v1/trips/bookings/${bookingId}/`);
+  },
+
+  /**
    * Get list of bookings on current user's trips
    */
   async getMyTripsBookings(): Promise<Booking[]> {
@@ -100,9 +106,8 @@ export const tripsApi = {
       queryParams.append('max_price_per_kg', params.max_price_per_kg.toString());
     if (params?.page) queryParams.append('page', params.page.toString());
 
-    const endpoint = `/api/v1/trips/my-trips/${
-      queryParams.toString() ? '?' + queryParams.toString() : ''
-    }`;
+    const endpoint = `/api/v1/trips/my-trips/${queryParams.toString() ? '?' + queryParams.toString() : ''
+      }`;
 
     return apiClient.get<PaginatedTripList>(endpoint);
   },
