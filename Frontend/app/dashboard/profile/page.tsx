@@ -25,6 +25,7 @@ import {
 import { authApi } from "@/lib/api"
 import { ApiClient } from "@/lib/api/client"
 import { useFetch, useApi } from "@/hooks/useApi"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 export default function ProfilePage() {
   const router = useRouter()
@@ -44,6 +45,7 @@ export default function ProfilePage() {
     phone_number: "",
     address: "",
     company_name: "",
+    avatar: "",
   })
   const [passwordForm, setPasswordForm] = useState({
     old_password: "",
@@ -60,6 +62,7 @@ export default function ProfilePage() {
         phone_number: profile.phone_number || "",
         address: "",
         company_name: "",
+        avatar: profile.profile_picture_url || "",
       })
     }
   }, [profile])
@@ -75,6 +78,13 @@ export default function ProfilePage() {
     setSuccess("Profile picture updated successfully")
     refetch()
     setTimeout(() => setSuccess(""), 3000)
+  }
+
+  const getInitials = (firstName?: string, lastName?: string) => {
+    if (!firstName && !lastName) return "U"
+    const first = firstName?.[0]?.toUpperCase() || ""
+    const last = lastName?.[0]?.toUpperCase() || ""
+    return `${first}${last}`.slice(0, 2) || "U"
   }
 
   return (
@@ -98,17 +108,18 @@ export default function ProfilePage() {
           <div className="glass rounded-2xl p-6 text-center">
             <div className="relative inline-block mb-4">
               <div className="w-24 h-24 rounded-full bg-primary/20 flex items-center justify-center mx-auto overflow-hidden">
-                {profile?.avatar_url ? (
-                  <img 
-                    src={profile.avatar_url} 
-                    alt="Profile"
-                    className="w-full h-full object-cover"
-                  />
+                {profile?.profile_picture_url ? (
+                  <Avatar className="w-9 h-9">
+                    <AvatarImage src={profile?.profile_picture_url || undefined} alt={profile?.full_name} />
+                    <AvatarFallback className="bg-primary/20 text-primary text-sm font-bold">
+                      {getInitials(profile?.first_name, profile?.last_name)}
+                    </AvatarFallback>
+                  </Avatar>
                 ) : (
                   <User className="w-12 h-12 text-primary" />
                 )}
               </div>
-              <button 
+              <button
                 onClick={() => setShowAvatarModal(true)}
                 className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition"
               >
@@ -178,7 +189,7 @@ export default function ProfilePage() {
                     onChange={(e) => {
                       const [first, last] = e.target.value.split(' ');
                       setFormData({ ...formData, first_name: first || '', last_name: last || '' });
-                    }}                    className="bg-input border-border text-foreground"
+                    }} className="bg-input border-border text-foreground"
                   />
                 ) : (
                   <p className="px-3 py-2 rounded-lg bg-secondary/30 text-foreground">{`${formData.first_name} ${formData.last_name}`}</p>
@@ -336,14 +347,12 @@ export default function ProfilePage() {
                 </div>
                 <button
                   onClick={() => setNotifications({ ...notifications, email: !notifications.email })}
-                  className={`w-12 h-6 rounded-full transition-colors ${
-                    notifications.email ? "bg-primary" : "bg-muted"
-                  }`}
+                  className={`w-12 h-6 rounded-full transition-colors ${notifications.email ? "bg-primary" : "bg-muted"
+                    }`}
                 >
                   <div
-                    className={`w-5 h-5 rounded-full bg-white transition-transform ${
-                      notifications.email ? "translate-x-6" : "translate-x-0.5"
-                    }`}
+                    className={`w-5 h-5 rounded-full bg-white transition-transform ${notifications.email ? "translate-x-6" : "translate-x-0.5"
+                      }`}
                   />
                 </button>
               </div>
@@ -358,14 +367,12 @@ export default function ProfilePage() {
                 </div>
                 <button
                   onClick={() => setNotifications({ ...notifications, sms: !notifications.sms })}
-                  className={`w-12 h-6 rounded-full transition-colors ${
-                    notifications.sms ? "bg-primary" : "bg-muted"
-                  }`}
+                  className={`w-12 h-6 rounded-full transition-colors ${notifications.sms ? "bg-primary" : "bg-muted"
+                    }`}
                 >
                   <div
-                    className={`w-5 h-5 rounded-full bg-white transition-transform ${
-                      notifications.sms ? "translate-x-6" : "translate-x-0.5"
-                    }`}
+                    className={`w-5 h-5 rounded-full bg-white transition-transform ${notifications.sms ? "translate-x-6" : "translate-x-0.5"
+                      }`}
                   />
                 </button>
               </div>
@@ -380,14 +387,12 @@ export default function ProfilePage() {
                 </div>
                 <button
                   onClick={() => setNotifications({ ...notifications, tripUpdates: !notifications.tripUpdates })}
-                  className={`w-12 h-6 rounded-full transition-colors ${
-                    notifications.tripUpdates ? "bg-primary" : "bg-muted"
-                  }`}
+                  className={`w-12 h-6 rounded-full transition-colors ${notifications.tripUpdates ? "bg-primary" : "bg-muted"
+                    }`}
                 >
                   <div
-                    className={`w-5 h-5 rounded-full bg-white transition-transform ${
-                      notifications.tripUpdates ? "translate-x-6" : "translate-x-0.5"
-                    }`}
+                    className={`w-5 h-5 rounded-full bg-white transition-transform ${notifications.tripUpdates ? "translate-x-6" : "translate-x-0.5"
+                      }`}
                   />
                 </button>
               </div>
@@ -402,14 +407,12 @@ export default function ProfilePage() {
                 </div>
                 <button
                   onClick={() => setNotifications({ ...notifications, promotions: !notifications.promotions })}
-                  className={`w-12 h-6 rounded-full transition-colors ${
-                    notifications.promotions ? "bg-primary" : "bg-muted"
-                  }`}
+                  className={`w-12 h-6 rounded-full transition-colors ${notifications.promotions ? "bg-primary" : "bg-muted"
+                    }`}
                 >
                   <div
-                    className={`w-5 h-5 rounded-full bg-white transition-transform ${
-                      notifications.promotions ? "translate-x-6" : "translate-x-0.5"
-                    }`}
+                    className={`w-5 h-5 rounded-full bg-white transition-transform ${notifications.promotions ? "translate-x-6" : "translate-x-0.5"
+                      }`}
                   />
                 </button>
               </div>
@@ -518,7 +521,7 @@ export default function ProfilePage() {
       {/* Avatar Upload Modal */}
       <AvatarUploadModal
         isOpen={showAvatarModal}
-        currentAvatarUrl={profile?.avatar_url}
+        currentAvatarUrl={profile?.profile_picture_url || undefined}
         onClose={() => setShowAvatarModal(false)}
         onSuccess={handleAvatarSuccess}
       />

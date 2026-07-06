@@ -218,8 +218,8 @@ export default function TripsPage() {
           <button
             onClick={() => handleTabChange("available")}
             className={`px-4 py-3 font-medium text-sm transition-colors relative ${activeTab === "available"
-                ? "text-primary"
-                : "text-muted-foreground hover:text-foreground"
+              ? "text-primary"
+              : "text-muted-foreground hover:text-foreground"
               }`}
           >
             Available Trips
@@ -231,8 +231,8 @@ export default function TripsPage() {
             onClick={() => handleTabChange("my-trips")}
             disabled={!user?.is_traveler || myTripsLoading}
             className={`px-4 py-3 font-medium text-sm transition-colors relative ${activeTab === "my-trips"
-                ? "text-primary"
-                : "text-muted-foreground hover:text-foreground"
+              ? "text-primary"
+              : "text-muted-foreground hover:text-foreground"
               } ${(!user?.is_traveler || myTripsLoading) ? "cursor-not-allowed opacity-50" : ""}`}
           >
             My Trips {user?.is_traveler ? `(${filteredTrips.length})` : ""}
@@ -244,8 +244,8 @@ export default function TripsPage() {
             onClick={() => handleTabChange("bookings")}
             disabled={!user?.is_traveler || tripBookingsLoading}
             className={`px-4 py-3 font-medium text-sm transition-colors relative ${activeTab === "bookings"
-                ? "text-primary"
-                : "text-muted-foreground hover:text-foreground"
+              ? "text-primary"
+              : "text-muted-foreground hover:text-foreground"
               } ${(!user?.is_traveler || tripBookingsLoading) ? "cursor-not-allowed opacity-50" : ""}`}
           >
             Bookings on My Trips {user?.is_traveler ? `(${filteredBookings.length})` : ""}
@@ -349,8 +349,8 @@ export default function TripsPage() {
                           </div>
                         </div>
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${trip.status === "open"
-                            ? "bg-success/20 text-success"
-                            : "bg-warning/20 text-warning"
+                          ? "bg-success/20 text-success"
+                          : "bg-warning/20 text-warning"
                           }`}>
                           {trip.status.charAt(0).toUpperCase() + trip.status.slice(1)}
                         </span>
@@ -445,8 +445,8 @@ export default function TripsPage() {
                           key={filter}
                           onClick={() => setActiveFilter(filter)}
                           className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${activeFilter === filter
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-secondary/50 text-muted-foreground hover:text-foreground hover:bg-secondary"
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-secondary/50 text-muted-foreground hover:text-foreground hover:bg-secondary"
                             }`}
                         >
                           {filter}
@@ -628,8 +628,18 @@ export default function TripsPage() {
                                   <span className="font-medium text-foreground text-sm">{booking.id.substring(0, 8)}</span>
                                 </td>
                                 <td className="px-6 py-4">
-                                  <span className="font-medium text-foreground text-sm">{booking.sender_name || 'N/A'}</span>
-                                  <p className="text-xs text-muted-foreground">{booking.sender_phone || 'N/A'}</p>
+                                  <div className="flex items-center gap-3">
+                                    <Avatar className="w-8 h-8">
+                                      <AvatarImage src={booking.sender_avatar || undefined} alt={booking.sender_name} />
+                                      <AvatarFallback className="bg-secondary text-foreground text-xs font-medium">
+                                        {booking.sender_name ? booking.sender_name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() : "?"}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                      <span className="font-medium text-foreground text-sm">{booking.sender_name || 'N/A'}</span>
+                                      <p className="text-xs text-muted-foreground">{booking.sender_phone || 'N/A'}</p>
+                                    </div>
+                                  </div>
                                 </td>
                                 <td className="px-6 py-4">
                                   <div>
