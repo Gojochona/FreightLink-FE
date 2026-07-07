@@ -29,6 +29,12 @@ const steps = [
   { id: 5, name: "Review & Confirm" },
 ]
 
+// datetime-local inputs need "YYYY-MM-DDTHH:mm" — no timezone, no seconds.
+function toDatetimeLocal(date: Date) {
+  const pad = (n: number) => String(n).padStart(2, "0")
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
 export default function NewTripPage() {
   const router = useRouter()
   const { user } = useAuth()
@@ -77,6 +83,10 @@ export default function NewTripPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (dateError) {
+      setError(dateError)
+      return
+    }
     setLoading(true)
     setError("")
 
@@ -90,12 +100,37 @@ export default function NewTripPage() {
     }
   }
 
+  const now = new Date()
+  const nowLocal = toDatetimeLocal(now)
+
+  const dateError = (() => {
+    const { departure_date, arrival_date, booking_cutoff_date } = formData
+    if (departure_date && new Date(departure_date) < now) {
+      return "Departure date can't be in the past."
+    }
+    if (departure_date && arrival_date && new Date(arrival_date) <= new Date(departure_date)) {
+      return "Arrival date must be after the departure date."
+    }
+    if (booking_cutoff_date && new Date(booking_cutoff_date) < now) {
+      return "Booking cutoff date can't be in the past."
+    }
+    if (departure_date && booking_cutoff_date && new Date(booking_cutoff_date) > new Date(departure_date)) {
+      return "Booking cutoff must be before the departure date."
+    }
+    return ""
+  })()
+
   const canProceed = () => {
     switch (currentStep) {
       case 1:
         return formData.origin_country && formData.origin_city && formData.destination_country && formData.destination_city
       case 2:
-        return formData.departure_date && formData.arrival_date && formData.booking_cutoff_date
+        return (
+          formData.departure_date &&
+          formData.arrival_date &&
+          formData.booking_cutoff_date &&
+          !dateError
+        )
       case 3:
         return formData.total_kg
       case 4:
@@ -237,6 +272,7 @@ export default function NewTripPage() {
                 <Input
                   name="departure_date"
                   type="datetime-local"
+                  min={nowLocal}
                   value={formData.departure_date}
                   onChange={handleInputChange}
                   className="bg-input border-border text-foreground"
@@ -248,6 +284,7 @@ export default function NewTripPage() {
                 <Input
                   name="arrival_date"
                   type="datetime-local"
+                  min={formData.departure_date || nowLocal}
                   value={formData.arrival_date}
                   onChange={handleInputChange}
                   className="bg-input border-border text-foreground"
@@ -260,12 +297,20 @@ export default function NewTripPage() {
                 <Input
                   name="booking_cutoff_date"
                   type="datetime-local"
+                  min={nowLocal}
+                  max={formData.departure_date || undefined}
                   value={formData.booking_cutoff_date}
                   onChange={handleInputChange}
                   className="bg-input border-border text-foreground"
                   required
                 />
               </div>
+              {dateError && (
+                <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  {dateError}
+                </div>
+              )}
             </div>
           )}
 

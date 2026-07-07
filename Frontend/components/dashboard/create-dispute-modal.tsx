@@ -28,24 +28,29 @@ const disputeReasons: { value: DisputeReason; label: string; description: string
     description: "The item delivered doesn't match the booking description"
   },
   {
-    value: DisputeReason.DAMAGED_ITEM,
+    value: DisputeReason.ITEM_DAMAGE,
     label: "Damaged Item",
     description: "The item arrived damaged or in poor condition"
   },
   {
-    value: DisputeReason.MISSING_ITEM,
+    value: DisputeReason.ITEM_MISSING,
     label: "Missing Item or Parts",
     description: "Some or all of the item is missing"
   },
   {
-    value: DisputeReason.DELIVERY_INCOMPLETE,
-    label: "Delivery Incomplete",
-    description: "The delivery was not completed as agreed"
+    value: DisputeReason.DELIVERY_LATE,
+    label: "Delivery Was Late",
+    description: "The delivery took much longer than agreed"
   },
   {
-    value: DisputeReason.SERVICE_ISSUE,
-    label: "Service Issue",
-    description: "General service issue or complaint"
+    value: DisputeReason.ITEM_QUALITY,
+    label: "Item Quality Issue",
+    description: "General service or item quality complaint"
+  },
+  {
+    value: DisputeReason.PAYMENT_WITHHELD,
+    label: "Sender Not Releasing Payment",
+    description: "Delivery was completed but the sender won't confirm/release funds"
   },
   {
     value: DisputeReason.OTHER,
@@ -61,7 +66,7 @@ export function CreateDisputeModal({
   onDisputeCreated,
 }: CreateDisputeModalProps) {
   const { showSuccess, showError } = useToast()
-  const [reason, setReason] = useState<DisputeReason | ''>(DisputeReason.SERVICE_ISSUE)
+  const [reason, setReason] = useState<DisputeReason | ''>(DisputeReason.OTHER)
   const [description, setDescription] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -89,7 +94,7 @@ export function CreateDisputeModal({
       showSuccess('Dispute created successfully!')
       
       // Reset form
-      setReason(DisputeReason.SERVICE_ISSUE)
+      setReason(DisputeReason.OTHER)
       setDescription('')
       
       // Call callback if provided

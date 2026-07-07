@@ -7,6 +7,8 @@ import { Header } from "@/components/dashboard/header"
 import { ActivateTravelerModal } from "@/components/dashboard/activate-traveler-modal"
 import { RejectionReasonModal } from "@/components/dashboard/RejectionReasonModal"
 import { HandoverConfirmModal } from "@/components/dashboard/handover-confirm-modal"
+import { DeliveryProofModal } from "@/components/dashboard/delivery-proof-modal"
+import { CreateDisputeModal } from "@/components/dashboard/create-dispute-modal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/useToast"
@@ -25,7 +27,8 @@ import {
   CheckCircle,
   Package,
   Truck,
-  AlertCircle
+  AlertCircle,
+  AlertTriangle
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -92,6 +95,8 @@ export default function TripsPage() {
   const [rejectingBookingId, setRejectingBookingId] = useState<string | null>(null)
   const [isRejectingLoading, setIsRejectingLoading] = useState(false)
   const [handoverModalBookingId, setHandoverModalBookingId] = useState<string | null>(null)
+  const [deliveryModalBookingId, setDeliveryModalBookingId] = useState<string | null>(null)
+  const [disputeModalBookingId, setDisputeModalBookingId] = useState<string | null>(null)
   const [availableSearch, setAvailableSearch] = useState({
     from_location: "",
     to_location: "",
@@ -208,21 +213,6 @@ export default function TripsPage() {
     } catch (error) {
       console.error("Error marking in transit:", error)
       showError("Failed to update status. Please try again.")
-    } finally {
-      setActioningId(null)
-    }
-  }
-
-  const handleInitiateDelivery = async (bookingId: string) => {
-    if (actioningId) return
-    setActioningId(bookingId)
-    try {
-      await tripsApi.initiateDelivery(bookingId)
-      showSuccess("Delivery OTP sent to receiver!")
-      refetchTripBookings()
-    } catch (error) {
-      console.error("Error initiating delivery:", error)
-      showError("Failed to send delivery OTP. Please try again.")
     } finally {
       setActioningId(null)
     }
@@ -776,13 +766,25 @@ export default function TripsPage() {
                                     )}
                                     {booking.status === "in_transit" && (
                                       <Button
-                                        onClick={() => handleInitiateDelivery(booking.id)}
+                                        onClick={() => setDeliveryModalBookingId(booking.id)}
                                         disabled={isActioning}
                                         size="sm"
                                         className="bg-primary hover:bg-primary/90 text-primary-foreground"
                                       >
                                         <CheckCircle className="w-4 h-4 mr-1" />
-                                        {isActioning ? "Sending OTP..." : "Deliver"}
+                                        Deliver
+                                      </Button>
+                                    )}
+                                    {booking.status === "delivered" && (
+                                      <Button
+                                        onClick={() => setDisputeModalBookingId(booking.id)}
+                                        disabled={isActioning}
+                                        size="sm"
+                                        variant="outline"
+                                        className="border-warning/40 text-warning hover:bg-warning/10"
+                                      >
+                                        <AlertTriangle className="w-4 h-4 mr-1" />
+                                        Raise Dispute
                                       </Button>
                                     )}
                                   </div>
@@ -832,6 +834,27 @@ export default function TripsPage() {
           role="traveler"
           onClose={() => setHandoverModalBookingId(null)}
           onConfirmed={() => refetchTripBookings()}
+        />
+      )}
+
+      {deliveryModalBookingId && (
+        <DeliveryProofModal
+          isOpen={!!deliveryModalBookingId}
+          bookingId={deliveryModalBookingId}
+          onClose={() => setDeliveryModalBookingId(null)}
+          onConfirmed={() => refetchTripBookings()}
+        />
+      )}
+
+      {disputeModalBookingId && (
+        <CreateDisputeModal
+          isOpen={!!disputeModalBookingId}
+          bookingId={disputeModalBookingId}
+          onClose={() => setDisputeModalBookingId(null)}
+          onDisputeCreated={() => {
+            setDisputeModalBookingId(null)
+            refetchTripBookings()
+          }}
         />
       )}
     </>

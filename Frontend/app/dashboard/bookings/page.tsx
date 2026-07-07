@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Header } from "@/components/dashboard/header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,6 +16,7 @@ import {
   XCircle,
   AlertTriangle,
   Truck,
+  CheckCircle,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -27,6 +29,7 @@ import { Booking, BookingStatus } from "@/lib/api/types"
 import { useFetch } from "@/hooks/useApi"
 import { CreateDisputeModal } from "@/components/dashboard/create-dispute-modal"
 import { HandoverConfirmModal } from "@/components/dashboard/handover-confirm-modal"
+import { useToast } from "@/hooks/useToast"
 
 const getBookingStatusColor = (status: BookingStatus | string) => {
   switch (status) {
@@ -54,11 +57,14 @@ const getBookingStatusColor = (status: BookingStatus | string) => {
 const bookingStatusFilters = ["All", "pending", "confirmed", "item_handed_over", "in_transit", "delivered", "completed", "cancelled", "disputed"]
 
 export default function BookingsPage() {
+  const router = useRouter()
   const [bookingSearch, setBookingSearch] = useState("")
   const [activeFilter, setActiveFilter] = useState("All")
   const [disputeModalOpen, setDisputeModalOpen] = useState(false)
   const [selectedBookingForDispute, setSelectedBookingForDispute] = useState<string | null>(null)
   const [handoverModalBookingId, setHandoverModalBookingId] = useState<string | null>(null)
+  const [confirmingDeliveryId, setConfirmingDeliveryId] = useState<string | null>(null)
+  const { showSuccess, showError } = useToast()
 
   // Fetch user's bookings (bookings they placed on OTHER trips)
   const { data: bookingsData, loading: bookingsLoading, refetch: refetchBookings } = useFetch(() => tripsApi.listBookings(), [])
@@ -73,6 +79,20 @@ export default function BookingsPage() {
     setSelectedBookingForDispute(null)
     // Optionally refetch bookings to update UI
     refetchBookings()
+  }
+
+  const handleConfirmDelivery = async (bookingId: string) => {
+    if (confirmingDeliveryId) return
+    setConfirmingDeliveryId(bookingId)
+    try {
+      await tripsApi.senderConfirmDelivery(bookingId)
+      showSuccess("Delivery confirmed — payment released to the carrier.")
+      refetchBookings()
+    } catch (error) {
+      showError(error instanceof Error ? error.message : "Could not confirm delivery. Please try again.")
+    } finally {
+      setConfirmingDeliveryId(null)
+    }
   }
 
 
@@ -185,7 +205,10 @@ export default function BookingsPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="bg-popover border-border">
-                            <DropdownMenuItem className="text-foreground focus:bg-accent focus:text-accent-foreground">
+                            <DropdownMenuItem
+                              className="text-foreground focus:bg-accent focus:text-accent-foreground"
+                              onClick={() => router.push(`/dashboard/bookings/${booking.id}`)}
+                            >
                               <Eye className="w-4 h-4 mr-2" /> View Details
                             </DropdownMenuItem>
                             {booking.status === "pending" && (
@@ -204,6 +227,16 @@ export default function BookingsPage() {
                             {booking.status === "confirmed" && booking.handover?.sender_confirmed && (
                               <DropdownMenuItem disabled className="text-muted-foreground">
                                 <Truck className="w-4 h-4 mr-2" /> Awaiting traveler receipt
+                              </DropdownMenuItem>
+                            )}
+                            {booking.status === "delivered" && (
+                              <DropdownMenuItem
+                                className="text-foreground focus:bg-accent focus:text-accent-foreground"
+                                onClick={() => handleConfirmDelivery(booking.id)}
+                                disabled={confirmingDeliveryId === booking.id}
+                              >
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                                {confirmingDeliveryId === booking.id ? "Confirming..." : "Confirm Delivery"}
                               </DropdownMenuItem>
                             )}
                             {(booking.status === "delivered" || booking.status === "in_transit" || booking.status === "completed") && (

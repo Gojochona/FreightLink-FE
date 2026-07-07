@@ -366,9 +366,12 @@ export interface Booking {
   weight_kg: string;
   total_price: string;
   status: BookingStatus;
+  viewer_role: 'sender' | 'traveler' | null;
   item_declaration: ItemDeclaration | null;
   needs_last_mile_delivery: boolean;
   handover: HandoverState;
+  delivery_photo_url: string | null;
+  delivery_confirmed_via: 'receiver_otp' | 'sender_confirmation' | null;
   confirmed_at: string | null;
   handed_over_at: string | null;
   delivered_at: string | null;
@@ -606,6 +609,7 @@ export enum DisputeReason {
   WRONG_ITEM = 'wrong_item',
   ITEM_QUALITY = 'item_quality',
   DELIVERY_LATE = 'delivery_late',
+  PAYMENT_WITHHELD = 'payment_withheld',
   OTHER = 'other',
 }
 

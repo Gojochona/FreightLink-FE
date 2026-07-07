@@ -157,12 +157,16 @@ export const tripsApi = {
   },
 
   /**
-   * Initiate delivery (generate OTP)
+   * Initiate delivery (generate OTP). Requires a photo as proof of
+   * delivery to the receiver.
    */
-  async initiateDelivery(bookingId: string): Promise<void> {
+  async initiateDelivery(bookingId: string, photo: File): Promise<{ detail: string }> {
+    const formData = new FormData();
+    formData.append('photo', photo);
     return apiClient.post(
       `/api/v1/trips/bookings/${bookingId}/initiate-delivery/`,
-      {}
+      formData,
+      { skipContentType: true }
     );
   },
 
@@ -173,6 +177,18 @@ export const tripsApi = {
     return apiClient.post(
       `/api/v1/wallet/escrow/${escrowId}/verify-otp/`,
       { otp }
+    );
+  },
+
+  /**
+   * Fallback for when the receiver can't relay the OTP back to the
+   * carrier (e.g. they're not a FreightLink user and hard to reach).
+   * The sender confirms delivery directly instead.
+   */
+  async senderConfirmDelivery(bookingId: string): Promise<Booking> {
+    return apiClient.post<Booking>(
+      `/api/v1/trips/bookings/${bookingId}/confirm-delivery/`,
+      {}
     );
   },
 };
