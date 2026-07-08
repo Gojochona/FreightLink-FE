@@ -13,3 +13,4 @@ export { dashboardApi } from './dashboard';
 export { settingsApi } from './settings';
 export { profileApi } from './profile';
 export { disputesApi } from './disputes';
+export { locationsApi } from './locations';

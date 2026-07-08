@@ -54,10 +54,16 @@ export const tripsApi = {
   },
 
   /**
-   * Create new trip (carrier/traveler)
+   * Create new trip (carrier/traveler). Requires a ticket_upload file —
+   * an admin reviews it before the trip appears in sender search results.
    */
   async createTrip(data: CreateTripRequest): Promise<Trip> {
-    return apiClient.post<Trip>('/api/v1/trips/', data);
+    const formData = new FormData();
+    Object.entries(data).forEach(([key, value]) => {
+      if (value === undefined || value === null) return;
+      formData.append(key, value instanceof File ? value : String(value));
+    });
+    return apiClient.post<Trip>('/api/v1/trips/', formData, { skipContentType: true });
   },
 
   /**

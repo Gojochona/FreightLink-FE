@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Header } from "@/components/dashboard/header"
@@ -15,11 +15,15 @@ import {
   Plane,
   ChevronRight,
   Check,
-  AlertCircle
+  AlertCircle,
+  FileCheck,
+  Upload
 } from "lucide-react"
-import { tripsApi } from "@/lib/api"
+import { tripsApi, locationsApi } from "@/lib/api"
+import type { CountryWithCities } from "@/lib/api/locations"
 import { CreateTripRequest } from "@/lib/api/types"
 import { useAuth } from "@/hooks/useAuth"
+import { LocationCombobox } from "@/components/dashboard/location-combobox"
 
 const steps = [
   { id: 1, name: "Trip Route" },
@@ -42,6 +46,17 @@ export default function NewTripPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [showActivateTraveler, setShowActivateTraveler] = useState(false)
+  const [countries, setCountries] = useState<CountryWithCities[]>([])
+
+  useEffect(() => {
+    locationsApi
+      .getCountriesAndCities()
+      .then((res) => setCountries(res.countries_with_cities))
+      .catch(() => {
+        // If this fails, the comboboxes just show no options rather
+        // than breaking the whole form — the person can still retry.
+      })
+  }, [])
 
   // Check if user is a traveler on mount
   useEffect(() => {
@@ -64,7 +79,9 @@ export default function NewTripPage() {
     accepts_food: true,
     accepts_electronics: true,
   }
-  const [formData, setFormData] = useState<CreateTripRequest>(formData_state)
+  const [formData, setFormData] = useState<Omit<CreateTripRequest, 'ticket_upload'>>(formData_state)
+  const [ticketFile, setTicketFile] = useState<File | null>(null)
+  const ticketInputRef = useRef<HTMLInputElement>(null)
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target as HTMLInputElement
@@ -87,11 +104,15 @@ export default function NewTripPage() {
       setError(dateError)
       return
     }
+    if (!ticketFile) {
+      setError("Please upload your flight ticket or booking confirmation.")
+      return
+    }
     setLoading(true)
     setError("")
 
     try {
-      await tripsApi.createTrip(formData)
+      await tripsApi.createTrip({ ...formData, ticket_upload: ticketFile })
       router.push("/dashboard/trips")
     } catch (err: any) {
       setError(err.message || "Failed to create trip")
@@ -219,46 +240,44 @@ export default function NewTripPage() {
             <div className="glass rounded-2xl p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">Origin Country</label>
-                <Input
-                  name="origin_country"
-                  placeholder="e.g., Nigeria"
+                <LocationCombobox
+                  options={countries.map((c) => c.name)}
                   value={formData.origin_country}
-                  onChange={handleInputChange}
-                  className="bg-input border-border text-foreground placeholder:text-muted-foreground"
-                  required
+                  onChange={(val) =>
+                    setFormData({ ...formData, origin_country: val, origin_city: "" })
+                  }
+                  placeholder="Select origin country"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">Origin City</label>
-                <Input
-                  name="origin_city"
-                  placeholder="e.g., Lagos"
+                <LocationCombobox
+                  options={countries.find((c) => c.name === formData.origin_country)?.cities || []}
                   value={formData.origin_city}
-                  onChange={handleInputChange}
-                  className="bg-input border-border text-foreground placeholder:text-muted-foreground"
-                  required
+                  onChange={(val) => setFormData({ ...formData, origin_city: val })}
+                  placeholder="Select origin city"
+                  disabled={!formData.origin_country}
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">Destination Country</label>
-                <Input
-                  name="destination_country"
-                  placeholder="e.g., USA"
+                <LocationCombobox
+                  options={countries.map((c) => c.name)}
                   value={formData.destination_country}
-                  onChange={handleInputChange}
-                  className="bg-input border-border text-foreground placeholder:text-muted-foreground"
-                  required
+                  onChange={(val) =>
+                    setFormData({ ...formData, destination_country: val, destination_city: "" })
+                  }
+                  placeholder="Select destination country"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">Destination City</label>
-                <Input
-                  name="destination_city"
-                  placeholder="e.g., New York"
+                <LocationCombobox
+                  options={countries.find((c) => c.name === formData.destination_country)?.cities || []}
                   value={formData.destination_city}
-                  onChange={handleInputChange}
-                  className="bg-input border-border text-foreground placeholder:text-muted-foreground"
-                  required
+                  onChange={(val) => setFormData({ ...formData, destination_city: val })}
+                  placeholder="Select destination city"
+                  disabled={!formData.destination_country}
                 />
               </div>
             </div>
@@ -456,6 +475,42 @@ export default function NewTripPage() {
                 <h3 className="font-semibold text-foreground mb-4">Booking Deadline</h3>
                 <p className="text-foreground">{new Date(formData.booking_cutoff_date).toLocaleString()}</p>
               </div>
+
+              <div className="glass rounded-2xl p-6">
+                <h3 className="font-semibold text-foreground mb-2">Proof of Travel</h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Upload your flight ticket or booking confirmation. An admin reviews
+                  this before your trip shows up in sender search results — this is
+                  what keeps fake listings off the platform.
+                </p>
+                <input
+                  ref={ticketInputRef}
+                  type="file"
+                  accept="image/*,.pdf"
+                  className="hidden"
+                  onChange={(e) => setTicketFile(e.target.files?.[0] || null)}
+                />
+                {ticketFile ? (
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-secondary/40 border border-border">
+                    <div className="flex items-center gap-2 text-sm text-foreground">
+                      <FileCheck className="w-4 h-4 text-primary" />
+                      {ticketFile.name}
+                    </div>
+                    <Button type="button" variant="ghost" size="sm" onClick={() => setTicketFile(null)}>
+                      Remove
+                    </Button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => ticketInputRef.current?.click()}
+                    className="w-full h-24 rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-foreground hover:border-primary transition-colors"
+                  >
+                    <Upload className="w-6 h-6" />
+                    <span className="text-sm">Upload ticket (image or PDF)</span>
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
@@ -492,7 +547,7 @@ export default function NewTripPage() {
               ) : (
                 <Button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || !ticketFile}
                   className="bg-success hover:bg-success/90 text-primary-foreground"
                 >
                   {loading ? "Creating..." : "Create Trip"}

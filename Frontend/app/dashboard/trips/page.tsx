@@ -518,6 +518,11 @@ export default function TripsPage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
+                          {!trip.ticket_verified && (
+                            <span className="px-3 py-1 rounded-full text-xs font-medium bg-warning/10 text-warning border border-warning/30">
+                              Pending Verification
+                            </span>
+                          )}
                           <span className={`px-3 py-1 rounded-full text-xs font-medium ${getTripStatusColor(trip.status)}`}>
                             {trip.status.charAt(0).toUpperCase() + trip.status.slice(1).replace('_', ' ')}
                           </span>

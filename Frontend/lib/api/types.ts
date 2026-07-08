@@ -288,6 +288,7 @@ export interface CreateTripRequest {
   accepts_fragile?: boolean;
   accepts_food?: boolean;
   accepts_electronics?: boolean;
+  ticket_upload: File;
 }
 
 export interface Trip {
