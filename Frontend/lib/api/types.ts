@@ -197,6 +197,11 @@ export interface ActivateTravelerResponse {
 export interface KYCStatusResponse {
   kyc_status: KycStatus;
   message: string;
+  document_type: DocumentType | null;
+  submitted_at: string | null;
+  rejection_reason: string | null;
+  id_verification_method: 'nin' | 'bvn' | null;
+  id_verified_at: string | null;
 }
 
 export interface KYCUploadRequest {

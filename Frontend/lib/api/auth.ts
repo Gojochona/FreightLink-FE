@@ -88,6 +88,23 @@ export const authApi = {
   },
 
   /**
+   * Automatically verify identity via NIN or BVN lookup (Dojah), as a
+   * faster alternative to manual document review. If the returned name
+   * matches the account closely enough, kyc_status becomes 'verified'
+   * immediately.
+   */
+  async verifyId(idType: 'nin' | 'bvn', idNumber: string): Promise<{
+    verified: boolean;
+    kyc_status: string;
+    detail: string;
+  }> {
+    return apiClient.post('/api/v1/auth/kyc/verify-id/', {
+      id_type: idType,
+      id_number: idNumber,
+    });
+  },
+
+  /**
    * Upload KYC documents
    */
   async uploadKycDocuments(data: KYCUploadRequest): Promise<void> {
