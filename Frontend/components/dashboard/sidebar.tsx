@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { useState } from "react"
 import {
   LayoutDashboard,
@@ -10,7 +10,6 @@ import {
   Wallet,
   Bell,
   User,
-  Settings,
   LogOut,
   ChevronLeft,
   ChevronRight,
@@ -40,7 +39,8 @@ const navItems = [
 
 export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const pathname = usePathname()
-  const { user } = useAuth()
+  const router = useRouter()
+  const { user, logout } = useAuth()
   const [showActivateTraveler, setShowActivateTraveler] = useState(false)
 
   return (
@@ -120,20 +120,16 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
           </div>
         )}
 
-        <Link
-          href="/dashboard/settings"
-          className="flex items-center gap-3 px-3 py-3 rounded-xl text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground transition-all duration-200"
-        >
-          <Settings className="w-5 h-5 shrink-0" />
-          {!collapsed && <span className="font-medium">Settings</span>}
-        </Link>
-        <Link
-          href="/login"
-          className="flex items-center gap-3 px-3 py-3 rounded-xl text-destructive hover:bg-destructive/10 transition-all duration-200"
+        <button
+          onClick={() => {
+            logout()
+            router.push("/login")
+          }}
+          className="flex items-center gap-3 px-3 py-3 rounded-xl text-destructive hover:bg-destructive/10 transition-all duration-200 w-full"
         >
           <LogOut className="w-5 h-5 shrink-0" />
           {!collapsed && <span className="font-medium">Logout</span>}
-        </Link>
+        </button>
       </div>
 
       {/* Activate Traveler Modal */}

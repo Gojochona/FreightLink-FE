@@ -81,6 +81,16 @@ export const authApi = {
   },
 
   /**
+   * Delete (deactivate) the current account. Requires password
+   * confirmation, and will be blocked by the backend if there's a
+   * wallet balance or an active booking/trip in progress.
+   */
+  async deleteAccount(password: string): Promise<{ detail: string }> {
+    const refresh = typeof window !== 'undefined' ? localStorage.getItem('refresh_token') : null;
+    return apiClient.post('/api/v1/auth/delete-account/', { password, refresh });
+  },
+
+  /**
    * Get KYC status
    */
   async getKycStatus(): Promise<KYCStatusResponse> {

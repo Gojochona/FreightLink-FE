@@ -235,6 +235,14 @@ export interface WalletTransaction {
   created_at: string;
 }
 
+export interface PaginatedTransactionList {
+  count: number;
+  totalPages: number;
+  next: string | null;
+  previous: string | null;
+  results: WalletTransaction[];
+}
+
 export interface InitiateDepositRequest {
   amount: string; // Decimal (in NGN)
 }
@@ -591,10 +599,12 @@ export interface FinancialAnalytics {
 }
 
 export interface WalletBalanceHistory {
-  snapshots: Array<{
+  balance_snapshots: Array<{
     date: string;
     balance: string;
   }>;
+  period: string;
+  range: number;
 }
 
 // ============================================================================

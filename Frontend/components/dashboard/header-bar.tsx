@@ -76,12 +76,6 @@ export function HeaderBar() {
             >
               Profile
             </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => router.push("/dashboard/settings")}
-              className="text-foreground focus:bg-accent focus:text-accent-foreground cursor-pointer"
-            >
-              Settings
-            </DropdownMenuItem>
             <DropdownMenuSeparator className="bg-border" />
             <DropdownMenuItem
               onClick={handleLogout}

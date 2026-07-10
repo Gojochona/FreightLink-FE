@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { Header } from "@/components/dashboard/header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,8 +13,6 @@ import {
   TrendingUp,
   TrendingDown,
   CreditCard,
-  Building2,
-  Copy,
   Eye,
   EyeOff,
   Search,
@@ -26,22 +24,11 @@ import {
   Loader
 } from "lucide-react"
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
-import { walletApi } from "@/lib/api"
+import { walletApi, dashboardApi } from "@/lib/api"
 import { useFetch, useApi } from "@/hooks/useApi"
-
-const chartData = [
-  { date: "Apr 1", balance: 1800000 },
-  { date: "Apr 5", balance: 2200000 },
-  { date: "Apr 8", balance: 1950000 },
-  { date: "Apr 10", balance: 2400000 },
-  { date: "Apr 12", balance: 2100000 },
-  { date: "Apr 15", balance: 2800000 },
-  { date: "Apr 17", balance: 2450000 },
-]
 
 const fundingMethods = [
   { id: "card", name: "Debit Card", icon: CreditCard, description: "Pay securely with your card via Paystack" },
-  // { id: "bank", name: "Bank Transfer", icon: Building2, description: "Transfer from your bank account" },
 ]
 
 const formatCurrency = (value: number) => {
@@ -50,6 +37,7 @@ const formatCurrency = (value: number) => {
 
 
 export default function WalletPage() {
+  const router = useRouter()
   const [showBalance, setShowBalance] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [showFundModal, setShowFundModal] = useState(false)
@@ -59,7 +47,16 @@ export default function WalletPage() {
   // Fetch wallet data from API
   const { data: walletData, loading: walletLoading } = useFetch(() => walletApi.getWallet(), [])
   const { data: transactions, loading: transLoading } = useFetch(() => walletApi.getTransactions(), [])
+  const { data: balanceHistory, loading: balanceHistoryLoading } = useFetch(() => dashboardApi.getWalletBalanceHistory(), [])
   const { execute: initiateDeposit, loading: depositLoading } = useApi(walletApi.initiateDeposit)
+
+  // Real balance history from the DB, shaped for the chart. Each date's
+  // balance comes from balance_after on the wallet's own transaction
+  // ledger — not derived/estimated on the frontend.
+  const chartData = (balanceHistory?.balance_snapshots || []).map((snap) => ({
+    date: new Date(snap.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+    balance: parseFloat(snap.balance),
+  }))
 
   // Filter transactions based on search
   const filteredTransactions = Array.isArray(transactions)
@@ -142,11 +139,18 @@ export default function WalletPage() {
         </div>
 
         {/* Chart and Account Details */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Balance Chart */}
-          <div className="lg:col-span-2 glass rounded-2xl p-6">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Balance History</h3>
-            <div className="h-64">
+        <div className="glass rounded-2xl p-6">
+          <h3 className="text-lg font-semibold text-foreground mb-4">Balance History</h3>
+          <div className="h-64">
+            {balanceHistoryLoading ? (
+              <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
+                Loading...
+              </div>
+            ) : chartData.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
+                No transaction history yet
+              </div>
+            ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                   <defs>
@@ -189,36 +193,7 @@ export default function WalletPage() {
                   />
                 </AreaChart>
               </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* Account Details */}
-          <div className="glass rounded-2xl p-6">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Virtual Account</h3>
-            <div className="space-y-4">
-              <div className="p-4 rounded-xl bg-secondary/30">
-                <p className="text-sm text-muted-foreground mb-1">Account Name</p>
-                <p className="font-medium text-foreground">FreightLink/John Doe</p>
-              </div>
-              <div className="p-4 rounded-xl bg-secondary/30">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-1">Account Number</p>
-                    <p className="font-mono font-medium text-foreground">8012345678</p>
-                  </div>
-                  <button className="text-primary hover:text-primary/80 transition-colors">
-                    <Copy className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-              <div className="p-4 rounded-xl bg-secondary/30">
-                <p className="text-sm text-muted-foreground mb-1">Bank</p>
-                <p className="font-medium text-foreground">Wema Bank</p>
-              </div>
-              <p className="text-xs text-muted-foreground text-center">
-                Funds sent to this account will be credited automatically
-              </p>
-            </div>
+            )}
           </div>
         </div>
 
@@ -313,7 +288,11 @@ export default function WalletPage() {
 
           {/* View More */}
           <div className="flex justify-center mt-6">
-            <Button variant="outline" className="border-border text-muted-foreground hover:text-foreground">
+            <Button
+              variant="outline"
+              onClick={() => router.push("/dashboard/wallet/transactions")}
+              className="border-border text-muted-foreground hover:text-foreground"
+            >
               View All Transactions
               <ChevronRight className="w-4 h-4 ml-2" />
             </Button>
@@ -393,26 +372,6 @@ export default function WalletPage() {
                     </button>
                   ))}
                 </div>
-
-                {selectedMethod === "bank" && (
-                  <div className="p-4 rounded-xl bg-info/10 border border-info/20">
-                    <p className="text-sm text-info font-medium mb-2">Bank Transfer Details</p>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Bank:</span>
-                        <span className="text-foreground">Wema Bank</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Account:</span>
-                        <span className="text-foreground font-mono">8012345678</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Name:</span>
-                        <span className="text-foreground">FreightLink/John Doe</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
 
                 {selectedMethod === "card" && (
                   <Button
