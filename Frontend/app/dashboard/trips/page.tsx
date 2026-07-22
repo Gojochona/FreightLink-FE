@@ -222,7 +222,7 @@ export default function TripsPage() {
     <>
       <Header title="Trips Management" subtitle="Browse available trips or manage your own" />
 
-      <div className="p-6 space-y-6">
+      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
         {/* Top Actions */}
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold text-foreground">Trips</h2>
@@ -669,7 +669,7 @@ export default function TripsPage() {
                   </div>
                 ) : (
                   <div className="glass rounded-2xl overflow-hidden">
-                    <div className="overflow-x-auto">
+                    <div className="hidden md:block overflow-x-auto">
                       <table className="w-full">
                         <thead className="bg-secondary/30">
                           <tr>
@@ -799,6 +799,112 @@ export default function TripsPage() {
                           })}
                         </tbody>
                       </table>
+                    </div>
+
+                    {/* Mobile card list */}
+                    <div className="md:hidden divide-y divide-border">
+                      {activeFilteredBookings.map((booking) => {
+                        const isActioning = actioningId === booking.id
+                        return (
+                          <div key={booking.id} className="p-3.5 space-y-2.5">
+                            <div className="flex items-center gap-2.5">
+                              <Avatar className="w-8 h-8 shrink-0">
+                                <AvatarImage src={booking.sender_avatar || undefined} alt={booking.sender_name} />
+                                <AvatarFallback className="bg-secondary text-foreground text-xs font-medium">
+                                  {booking.sender_name ? booking.sender_name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() : "?"}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="min-w-0 flex-1">
+                                <p className="font-medium text-foreground text-sm truncate">{booking.sender_name || 'N/A'}</p>
+                                <p className="text-xs text-muted-foreground">{booking.id.substring(0, 8)}</p>
+                              </div>
+                              <span className="font-semibold text-foreground text-sm shrink-0">₦{booking.total_price}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-xs text-foreground">
+                              <MapPin className="w-3.5 h-3.5 text-success shrink-0" />
+                              <span className="truncate">{booking.trip_route}</span>
+                              <span className="text-muted-foreground shrink-0">· {booking.weight_kg}kg</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground truncate">To: {booking.receiver_name} · {booking.receiver_phone}</p>
+                            <div className="flex flex-wrap items-center gap-2 pt-1">
+                              {booking.status === "pending" && (
+                                <>
+                                  <Button
+                                    onClick={() => handleAcceptBooking(booking.id)}
+                                    disabled={isActioning}
+                                    size="sm"
+                                    className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs h-8"
+                                  >
+                                    <CheckCircle className="w-3.5 h-3.5 mr-1" />
+                                    {isActioning ? "Accepting..." : "Accept"}
+                                  </Button>
+                                  <Button
+                                    onClick={() => handleRejectBooking(booking.id)}
+                                    disabled={isActioning}
+                                    size="sm"
+                                    variant="destructive"
+                                    className="bg-destructive/90 hover:bg-destructive text-foreground text-xs h-8"
+                                  >
+                                    <XCircle className="w-3.5 h-3.5 mr-1" />
+                                    Reject
+                                  </Button>
+                                </>
+                              )}
+                              {booking.status === "confirmed" && (
+                                booking.handover?.sender_confirmed ? (
+                                  <Button
+                                    onClick={() => setHandoverModalBookingId(booking.id)}
+                                    disabled={isActioning}
+                                    size="sm"
+                                    className="bg-secondary hover:bg-secondary/90 text-foreground text-xs h-8"
+                                  >
+                                    <Truck className="w-3.5 h-3.5 mr-1" />
+                                    Confirm Receipt
+                                  </Button>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground italic">
+                                    Awaiting sender handover
+                                  </span>
+                                )
+                              )}
+                              {booking.status === "item_handed_over" && (
+                                <Button
+                                  onClick={() => handleMarkInTransit(booking.id)}
+                                  disabled={isActioning}
+                                  size="sm"
+                                  className="bg-info hover:bg-info/90 text-foreground text-xs h-8"
+                                >
+                                  <Truck className="w-3.5 h-3.5 mr-1" />
+                                  {isActioning ? "Updating..." : "In Transit"}
+                                </Button>
+                              )}
+                              {booking.status === "in_transit" && (
+                                <Button
+                                  onClick={() => setDeliveryModalBookingId(booking.id)}
+                                  disabled={isActioning}
+                                  size="sm"
+                                  className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs h-8"
+                                >
+                                  <CheckCircle className="w-3.5 h-3.5 mr-1" />
+                                  Deliver
+                                </Button>
+                              )}
+                              {booking.status === "delivered" && (
+                                <Button
+                                  onClick={() => setDisputeModalBookingId(booking.id)}
+                                  disabled={isActioning}
+                                  size="sm"
+                                  variant="outline"
+                                  className="border-warning/40 text-warning hover:bg-warning/10 text-xs h-8"
+                                >
+                                  <AlertTriangle className="w-3.5 h-3.5 mr-1" />
+                                  Raise Dispute
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })}
                     </div>
                   </div>
                 )}

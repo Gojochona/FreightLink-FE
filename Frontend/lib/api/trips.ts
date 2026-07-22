@@ -125,6 +125,18 @@ export const tripsApi = {
   },
 
   /**
+   * Sender withdraws their own pending booking request before the
+   * traveler has responded. No charge has occurred yet, so this is a
+   * simple cancellation.
+   */
+  async cancelBooking(bookingId: string): Promise<Booking> {
+    return apiClient.post<Booking>(
+      `/api/v1/trips/bookings/${bookingId}/cancel/`,
+      {}
+    );
+  },
+
+  /**
    * Reject a booking with reason
    */
   async rejectBooking(

@@ -110,42 +110,42 @@ export default function BookingDetailPage() {
   return (
     <div>
       <Header title="Booking Details" />
-      <div className="p-6 max-w-2xl mx-auto">
-        <Button variant="ghost" onClick={() => router.back()} className="mb-4">
+      <div className="p-4 sm:p-6 max-w-2xl mx-auto">
+        <Button variant="ghost" onClick={() => router.back()} className="mb-3 sm:mb-4 -ml-2 h-8 sm:h-9 text-sm">
           <ArrowLeft className="w-4 h-4 mr-2" /> Back
         </Button>
 
         {loading && <Loader className="w-8 h-8 animate-spin mx-auto mt-12" />}
-        {error && <p className="text-destructive text-center mt-12">{error}</p>}
+        {error && <p className="text-destructive text-center mt-12 text-sm">{error}</p>}
 
         {booking && (
-          <div className="glass rounded-2xl p-6 space-y-4">
+          <div className="glass rounded-2xl p-4 sm:p-6 space-y-4">
             <div className="flex items-center gap-3">
-              <Avatar className="w-12 h-12">
+              <Avatar className="w-10 h-10 sm:w-12 sm:h-12 shrink-0">
                 <AvatarImage src={booking.sender_avatar || undefined} alt={booking.sender_name} />
                 <AvatarFallback>{booking.sender_name?.[0] || "?"}</AvatarFallback>
               </Avatar>
-              <div>
-                <p className="font-semibold text-foreground">{booking.sender_name}</p>
-                <p className="text-sm text-muted-foreground">{booking.sender_phone}</p>
+              <div className="min-w-0">
+                <p className="font-semibold text-foreground text-sm sm:text-base truncate">{booking.sender_name}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">{booking.sender_phone}</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 text-xs sm:text-sm">
               <div><p className="text-muted-foreground">Weight</p><p className="font-medium">{booking.weight_kg}kg</p></div>
               <div><p className="text-muted-foreground">Total Price</p><p className="font-medium">₦{booking.total_price}</p></div>
               <div><p className="text-muted-foreground">Status</p><p className="font-medium capitalize">{booking.status.replace(/_/g, " ")}</p></div>
               <div><p className="text-muted-foreground">Receiver</p><p className="font-medium">{booking.receiver_name}</p></div>
             </div>
 
-            <div className="p-3 rounded-xl bg-secondary/30 text-sm">
+            <div className="p-3 rounded-xl bg-secondary/30 text-xs sm:text-sm">
               <p className="text-muted-foreground mb-1">Delivery Address</p>
               <p>{booking.receiver_address}</p>
             </div>
 
             {/* Handover status */}
             {(booking.status === "confirmed" || booking.status === "item_handed_over") && (
-              <div className="p-3 rounded-xl bg-secondary/30 text-sm space-y-1">
+              <div className="p-3 rounded-xl bg-secondary/30 text-xs sm:text-sm space-y-1">
                 <p className="text-muted-foreground mb-1">Handover Status</p>
                 <p>Sender confirmed: <span className="font-medium">{booking.handover.sender_confirmed ? "Yes" : "Not yet"}</span></p>
                 <p>Traveler confirmed: <span className="font-medium">{booking.handover.traveler_confirmed ? "Yes" : "Not yet"}</span></p>
@@ -155,25 +155,25 @@ export default function BookingDetailPage() {
             {/* Delivery proof photo */}
             {booking.delivery_photo_url && (
               <div className="space-y-1">
-                <p className="text-muted-foreground text-sm">Delivery Proof Photo</p>
+                <p className="text-muted-foreground text-xs sm:text-sm">Delivery Proof Photo</p>
                 <img
                   src={booking.delivery_photo_url}
                   alt="Delivery proof"
-                  className="w-full h-48 object-cover rounded-xl border border-border"
+                  className="w-full h-40 sm:h-48 object-cover rounded-xl border border-border"
                 />
               </div>
             )}
 
             {/* Contextual actions — mirrors what's available from the list/menu */}
-            <div className="flex flex-wrap gap-2 pt-2 border-t border-border">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 pt-2 border-t border-border">
               {/* Sender-side actions */}
               {role === "sender" && booking.status === "confirmed" && !booking.handover.sender_confirmed && (
-                <Button onClick={() => setHandoverModalOpen(true)} disabled={actioning} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                <Button onClick={() => setHandoverModalOpen(true)} disabled={actioning} className="bg-primary hover:bg-primary/90 text-primary-foreground text-sm">
                   <Truck className="w-4 h-4 mr-2" /> Confirm Handover
                 </Button>
               )}
               {role === "sender" && booking.status === "delivered" && (
-                <Button onClick={handleSenderConfirmDelivery} disabled={actioning} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                <Button onClick={handleSenderConfirmDelivery} disabled={actioning} className="bg-primary hover:bg-primary/90 text-primary-foreground text-sm">
                   <CheckCircle className="w-4 h-4 mr-2" /> {actioning ? "Confirming..." : "Confirm Delivery"}
                 </Button>
               )}
@@ -181,36 +181,36 @@ export default function BookingDetailPage() {
               {/* Traveler-side actions */}
               {role === "traveler" && booking.status === "pending" && (
                 <>
-                  <Button onClick={handleAccept} disabled={actioning} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                  <Button onClick={handleAccept} disabled={actioning} className="bg-primary hover:bg-primary/90 text-primary-foreground text-sm">
                     <CheckCircle className="w-4 h-4 mr-2" /> Accept
                   </Button>
-                  <Button onClick={() => setRejectionModalOpen(true)} disabled={actioning} variant="outline" className="border-destructive/40 text-destructive hover:bg-destructive/10">
+                  <Button onClick={() => setRejectionModalOpen(true)} disabled={actioning} variant="outline" className="border-destructive/40 text-destructive hover:bg-destructive/10 text-sm">
                     <XCircle className="w-4 h-4 mr-2" /> Reject
                   </Button>
                 </>
               )}
               {role === "traveler" && booking.status === "confirmed" && booking.handover.sender_confirmed && !booking.handover.traveler_confirmed && (
-                <Button onClick={() => setHandoverModalOpen(true)} disabled={actioning} className="bg-secondary hover:bg-secondary/90 text-foreground">
+                <Button onClick={() => setHandoverModalOpen(true)} disabled={actioning} className="bg-secondary hover:bg-secondary/90 text-foreground text-sm">
                   <Truck className="w-4 h-4 mr-2" /> Confirm Receipt
                 </Button>
               )}
               {role === "traveler" && booking.status === "confirmed" && !booking.handover.sender_confirmed && (
-                <p className="text-sm text-muted-foreground italic">Awaiting sender handover</p>
+                <p className="text-xs sm:text-sm text-muted-foreground italic">Awaiting sender handover</p>
               )}
               {role === "traveler" && booking.status === "item_handed_over" && (
-                <Button onClick={handleMarkInTransit} disabled={actioning} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                <Button onClick={handleMarkInTransit} disabled={actioning} className="bg-primary hover:bg-primary/90 text-primary-foreground text-sm">
                   <Truck className="w-4 h-4 mr-2" /> {actioning ? "Updating..." : "Mark In Transit"}
                 </Button>
               )}
               {role === "traveler" && booking.status === "in_transit" && (
-                <Button onClick={() => setDeliveryModalOpen(true)} disabled={actioning} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                <Button onClick={() => setDeliveryModalOpen(true)} disabled={actioning} className="bg-primary hover:bg-primary/90 text-primary-foreground text-sm">
                   <CheckCircle className="w-4 h-4 mr-2" /> Deliver
                 </Button>
               )}
 
               {/* Either side can raise a dispute once something's actually happened */}
               {(booking.status === "delivered" || booking.status === "in_transit" || booking.status === "completed") && (
-                <Button onClick={() => setDisputeModalOpen(true)} disabled={actioning} variant="outline" className="border-warning/40 text-warning hover:bg-warning/10">
+                <Button onClick={() => setDisputeModalOpen(true)} disabled={actioning} variant="outline" className="border-warning/40 text-warning hover:bg-warning/10 text-sm">
                   <AlertTriangle className="w-4 h-4 mr-2" /> Raise Dispute
                 </Button>
               )}

@@ -1,6 +1,6 @@
 "use client"
 
-import { Bell, ChevronDown } from "lucide-react"
+import { Bell, ChevronDown, Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -14,7 +14,7 @@ import { useRouter } from "next/navigation"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { useDashboardHeader } from "@/contexts/DashboardHeaderContext"
 
-export function HeaderBar() {
+export function HeaderBar({ onMenuClick }: { onMenuClick?: () => void }) {
   const { user, logout } = useAuth()
   const router = useRouter()
   const { title, subtitle, unreadCount } = useDashboardHeader()
@@ -32,16 +32,25 @@ export function HeaderBar() {
   }
 
   return (
-    <header className="h-16 border-b border-border flex items-center justify-between px-6 bg-card/50 backdrop-blur-sm sticky top-0 z-30">
-      <div>
-        <h1 className="text-xl font-bold text-foreground">{title}</h1>
-        {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
+    <header className="h-14 sm:h-16 border-b border-border flex items-center justify-between px-3 sm:px-6 bg-card/50 backdrop-blur-sm sticky top-0 z-30 gap-2">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+        <button
+          onClick={onMenuClick}
+          className="md:hidden shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
+          aria-label="Open menu"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+        <div className="min-w-0">
+          <h1 className="text-base sm:text-xl font-bold text-foreground truncate">{title}</h1>
+          {subtitle && <p className="text-xs sm:text-sm text-muted-foreground truncate hidden xs:block">{subtitle}</p>}
+        </div>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-1.5 sm:gap-4 shrink-0">
         <Button variant="ghost"
           size="icon"
-          className="relative text-muted-foreground hover:text-foreground"
+          className="relative text-muted-foreground hover:text-foreground h-9 w-9 sm:h-10 sm:w-10"
           onClick={() => router.push("/dashboard/notifications")}
         >
           <Bell className="w-5 h-5" />
@@ -55,8 +64,8 @@ export function HeaderBar() {
         {/* User Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex items-center gap-3 px-3">
-              <Avatar className="w-9 h-9">
+            <Button variant="ghost" className="flex items-center gap-2 sm:gap-3 px-1.5 sm:px-3">
+              <Avatar className="w-8 h-8 sm:w-9 sm:h-9">
                 <AvatarImage src={user?.profile_picture_url || undefined} alt={user?.full_name} />
                 <AvatarFallback className="bg-primary/20 text-primary text-sm font-bold">
                   {getInitials(user?.first_name, user?.last_name)}

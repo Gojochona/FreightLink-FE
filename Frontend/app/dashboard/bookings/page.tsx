@@ -24,6 +24,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { tripsApi } from "@/lib/api"
 import { Booking, BookingStatus } from "@/lib/api/types"
 import { useFetch } from "@/hooks/useApi"
@@ -56,6 +66,81 @@ const getBookingStatusColor = (status: BookingStatus | string) => {
 
 const bookingStatusFilters = ["All", "pending", "confirmed", "item_handed_over", "in_transit", "delivered", "completed", "cancelled", "disputed"]
 
+function BookingActionsMenu({
+  booking,
+  onView,
+  onCancel,
+  onConfirmHandover,
+  onConfirmDelivery,
+  onRaiseDispute,
+  confirmingDeliveryId,
+}: {
+  booking: Booking
+  onView: () => void
+  onCancel: () => void
+  onConfirmHandover: () => void
+  onConfirmDelivery: () => void
+  onRaiseDispute: () => void
+  confirmingDeliveryId: string | null
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground h-8 w-8 sm:h-9 sm:w-9">
+          <MoreVertical className="w-4 h-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="bg-popover border-border">
+        <DropdownMenuItem
+          className="text-foreground focus:bg-accent focus:text-accent-foreground"
+          onClick={onView}
+        >
+          <Eye className="w-4 h-4 mr-2" /> View Details
+        </DropdownMenuItem>
+        {booking.status === "pending" && (
+          <DropdownMenuItem
+            className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+            onClick={onCancel}
+          >
+            <XCircle className="w-4 h-4 mr-2" /> Cancel Booking
+          </DropdownMenuItem>
+        )}
+        {booking.status === "confirmed" && !booking.handover?.sender_confirmed && (
+          <DropdownMenuItem
+            className="text-foreground focus:bg-accent focus:text-accent-foreground"
+            onClick={onConfirmHandover}
+          >
+            <Truck className="w-4 h-4 mr-2" /> Confirm Handover
+          </DropdownMenuItem>
+        )}
+        {booking.status === "confirmed" && booking.handover?.sender_confirmed && (
+          <DropdownMenuItem disabled className="text-muted-foreground">
+            <Truck className="w-4 h-4 mr-2" /> Awaiting traveler receipt
+          </DropdownMenuItem>
+        )}
+        {booking.status === "delivered" && (
+          <DropdownMenuItem
+            className="text-foreground focus:bg-accent focus:text-accent-foreground"
+            onClick={onConfirmDelivery}
+            disabled={confirmingDeliveryId === booking.id}
+          >
+            <CheckCircle className="w-4 h-4 mr-2" />
+            {confirmingDeliveryId === booking.id ? "Confirming..." : "Confirm Delivery"}
+          </DropdownMenuItem>
+        )}
+        {(booking.status === "delivered" || booking.status === "in_transit" || booking.status === "completed") && (
+          <DropdownMenuItem
+            className="text-warning focus:bg-warning/10 focus:text-warning"
+            onClick={onRaiseDispute}
+          >
+            <AlertTriangle className="w-4 h-4 mr-2" /> Raise Dispute
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
 export default function BookingsPage() {
   const router = useRouter()
   const [bookingSearch, setBookingSearch] = useState("")
@@ -64,6 +149,8 @@ export default function BookingsPage() {
   const [selectedBookingForDispute, setSelectedBookingForDispute] = useState<string | null>(null)
   const [handoverModalBookingId, setHandoverModalBookingId] = useState<string | null>(null)
   const [confirmingDeliveryId, setConfirmingDeliveryId] = useState<string | null>(null)
+  const [bookingToCancel, setBookingToCancel] = useState<string | null>(null)
+  const [cancellingId, setCancellingId] = useState<string | null>(null)
   const { showSuccess, showError } = useToast()
 
   // Fetch user's bookings (bookings they placed on OTHER trips)
@@ -96,6 +183,22 @@ export default function BookingsPage() {
   }
 
 
+  const handleCancelBooking = async () => {
+    if (!bookingToCancel) return
+    setCancellingId(bookingToCancel)
+    try {
+      await tripsApi.cancelBooking(bookingToCancel)
+      showSuccess("Booking request withdrawn.")
+      refetchBookings()
+    } catch (error) {
+      showError(error instanceof Error ? error.message : "Could not cancel booking. Please try again.")
+    } finally {
+      setCancellingId(null)
+      setBookingToCancel(null)
+    }
+  }
+
+
   const bookingsList = Array.isArray(bookingsData) ? bookingsData : []
 
   // Filter user's bookings
@@ -111,23 +214,23 @@ export default function BookingsPage() {
   return (
     <>
       <Header title="Bookings" subtitle="Manage your bookings" />
-      <div className="p-6 space-y-8">
+      <div className="p-4 sm:p-6 space-y-6 sm:space-y-8">
         {/* ========== MY BOOKINGS ========== */}
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-foreground">My Bookings</h2>
-            <p className="text-sm text-muted-foreground">{filteredBookings.length} bookings</p>
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <h2 className="text-lg sm:text-2xl font-bold text-foreground">My Bookings</h2>
+            <p className="text-xs sm:text-sm text-muted-foreground">{filteredBookings.length} bookings</p>
           </div>
 
           {/* Filters and Search */}
-          <div className="glass rounded-2xl p-4 mb-4">
-            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-              <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0">
+          <div className="glass rounded-2xl p-3 sm:p-4 mb-4">
+            <div className="flex flex-col md:flex-row gap-3 sm:gap-4 items-stretch md:items-center justify-between">
+              <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 -mx-1 px-1">
                 {bookingStatusFilters.map((filter) => (
                   <button
                     key={filter}
                     onClick={() => setActiveFilter(filter)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${activeFilter === filter
+                    className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition-all ${activeFilter === filter
                       ? "bg-primary text-primary-foreground"
                       : "bg-secondary/50 text-muted-foreground hover:text-foreground hover:bg-secondary"
                       }`}
@@ -136,26 +239,27 @@ export default function BookingsPage() {
                   </button>
                 ))}
               </div>
-              <div className="flex items-center gap-3 w-full md:w-auto">
+              <div className="flex items-center gap-2 sm:gap-3 w-full md:w-auto">
                 <div className="relative flex-1 md:w-64">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
                     placeholder="Search bookings..."
                     value={bookingSearch}
                     onChange={(e) => setBookingSearch(e.target.value)}
-                    className="pl-10 bg-input border-border text-foreground placeholder:text-muted-foreground"
+                    className="pl-10 bg-input border-border text-foreground placeholder:text-muted-foreground text-sm"
                   />
                 </div>
-                <Button variant="outline" size="icon" className="border-border text-muted-foreground hover:text-foreground">
+                <Button variant="outline" size="icon" className="border-border text-muted-foreground hover:text-foreground shrink-0">
                   <Filter className="w-4 h-4" />
                 </Button>
               </div>
             </div>
           </div>
 
-          {/* Bookings Table */}
+          {/* Bookings — table on md+, cards on mobile */}
           <div className="glass rounded-2xl overflow-hidden">
-            <div className="overflow-x-auto">
+            {/* Desktop table */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-secondary/30">
                   <tr>
@@ -198,57 +302,15 @@ export default function BookingsPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
-                              <MoreVertical className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="bg-popover border-border">
-                            <DropdownMenuItem
-                              className="text-foreground focus:bg-accent focus:text-accent-foreground"
-                              onClick={() => router.push(`/dashboard/bookings/${booking.id}`)}
-                            >
-                              <Eye className="w-4 h-4 mr-2" /> View Details
-                            </DropdownMenuItem>
-                            {booking.status === "pending" && (
-                              <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive">
-                                <XCircle className="w-4 h-4 mr-2" /> Cancel Booking
-                              </DropdownMenuItem>
-                            )}
-                            {booking.status === "confirmed" && !booking.handover?.sender_confirmed && (
-                              <DropdownMenuItem
-                                className="text-foreground focus:bg-accent focus:text-accent-foreground"
-                                onClick={() => setHandoverModalBookingId(booking.id)}
-                              >
-                                <Truck className="w-4 h-4 mr-2" /> Confirm Handover
-                              </DropdownMenuItem>
-                            )}
-                            {booking.status === "confirmed" && booking.handover?.sender_confirmed && (
-                              <DropdownMenuItem disabled className="text-muted-foreground">
-                                <Truck className="w-4 h-4 mr-2" /> Awaiting traveler receipt
-                              </DropdownMenuItem>
-                            )}
-                            {booking.status === "delivered" && (
-                              <DropdownMenuItem
-                                className="text-foreground focus:bg-accent focus:text-accent-foreground"
-                                onClick={() => handleConfirmDelivery(booking.id)}
-                                disabled={confirmingDeliveryId === booking.id}
-                              >
-                                <CheckCircle className="w-4 h-4 mr-2" />
-                                {confirmingDeliveryId === booking.id ? "Confirming..." : "Confirm Delivery"}
-                              </DropdownMenuItem>
-                            )}
-                            {(booking.status === "delivered" || booking.status === "in_transit" || booking.status === "completed") && (
-                              <DropdownMenuItem
-                                className="text-warning focus:bg-warning/10 focus:text-warning"
-                                onClick={() => handleOpenDisputeModal(booking.id)}
-                              >
-                                <AlertTriangle className="w-4 h-4 mr-2" /> Raise Dispute
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <BookingActionsMenu
+                          booking={booking}
+                          onView={() => router.push(`/dashboard/bookings/${booking.id}`)}
+                          onCancel={() => setBookingToCancel(booking.id)}
+                          onConfirmHandover={() => setHandoverModalBookingId(booking.id)}
+                          onConfirmDelivery={() => handleConfirmDelivery(booking.id)}
+                          onRaiseDispute={() => handleOpenDisputeModal(booking.id)}
+                          confirmingDeliveryId={confirmingDeliveryId}
+                        />
                       </td>
                     </tr>
                   ))}
@@ -256,11 +318,47 @@ export default function BookingsPage() {
               </table>
             </div>
 
+            {/* Mobile cards */}
+            <div className="md:hidden divide-y divide-border">
+              {filteredBookings.map((booking) => (
+                <div key={booking.id} className="p-3.5 space-y-2.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="font-medium text-foreground text-sm truncate">{booking.receiver_name}</p>
+                      <p className="text-xs text-muted-foreground">{booking.id.substring(0, 8)} · {booking.receiver_phone}</p>
+                    </div>
+                    <BookingActionsMenu
+                      booking={booking}
+                      onView={() => router.push(`/dashboard/bookings/${booking.id}`)}
+                      onCancel={() => setBookingToCancel(booking.id)}
+                      onConfirmHandover={() => setHandoverModalBookingId(booking.id)}
+                      onConfirmDelivery={() => handleConfirmDelivery(booking.id)}
+                      onRaiseDispute={() => handleOpenDisputeModal(booking.id)}
+                      confirmingDeliveryId={confirmingDeliveryId}
+                    />
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-foreground">
+                    <MapPin className="w-3.5 h-3.5 text-success shrink-0" />
+                    <span className="truncate">{booking.trip_route}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span>{booking.weight_kg} kg</span>
+                      <span className="font-semibold text-foreground">₦{booking.total_price}</span>
+                    </div>
+                    <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${getBookingStatusColor(booking.status)}`}>
+                      {booking.status.charAt(0).toUpperCase() + booking.status.slice(1).replace('_', ' ')}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
             {filteredBookings.length === 0 && (
-              <div className="p-12 text-center">
-                <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-foreground mb-2">No bookings yet</h3>
-                <p className="text-muted-foreground">Book a trip from the available trips above</p>
+              <div className="p-8 sm:p-12 text-center">
+                <Package className="w-10 h-10 sm:w-12 sm:h-12 text-muted-foreground mx-auto mb-3 sm:mb-4" />
+                <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2">No bookings yet</h3>
+                <p className="text-sm text-muted-foreground">Book a trip from the available trips above</p>
               </div>
             )}
           </div>
@@ -289,6 +387,32 @@ export default function BookingsPage() {
           onConfirmed={() => refetchBookings()}
         />
       )}
+
+      {/* Cancel Booking confirmation */}
+      <AlertDialog open={!!bookingToCancel} onOpenChange={(open) => !open && setBookingToCancel(null)}>
+        <AlertDialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel this booking request?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This withdraws your pending request before the traveler responds. You haven't been
+              charged yet, so there's nothing to refund — you can just book another trip afterward.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={!!cancellingId}>Keep booking</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={!!cancellingId}
+              onClick={(e) => {
+                e.preventDefault()
+                handleCancelBooking()
+              }}
+            >
+              {cancellingId ? "Cancelling..." : "Cancel Booking"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }

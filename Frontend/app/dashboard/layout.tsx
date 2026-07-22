@@ -13,6 +13,7 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
 
   return (
     <ToastProvider>
@@ -21,14 +22,16 @@ export default function DashboardLayout({
           <Sidebar
             collapsed={sidebarCollapsed}
             onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+            mobileOpen={mobileSidebarOpen}
+            onMobileClose={() => setMobileSidebarOpen(false)}
           />
           <main
             className={cn(
               "transition-all duration-300",
-              sidebarCollapsed ? "ml-20" : "ml-64"
+              sidebarCollapsed ? "md:ml-20" : "md:ml-64"
             )}
           >
-            <HeaderBar />
+            <HeaderBar onMenuClick={() => setMobileSidebarOpen(true)} />
             {children}
           </main>
         </div>
