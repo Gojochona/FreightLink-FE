@@ -102,7 +102,7 @@ export function RejectionReasonModal({
           <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirm}
-            disabled={isLoading || !reason.trim()}
+            disabled={isLoading || reason.trim().length < 10}
             className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
           >
             {isLoading ? "Rejecting..." : "Reject Booking"}
