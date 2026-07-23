@@ -25,7 +25,7 @@ import {
   AlertTriangle,
   Trash2,
 } from "lucide-react"
-import { authApi, profileApi } from "@/lib/api"
+import { authApi, profileApi, settingsApi } from "@/lib/api"
 import { useFetch, useApi } from "@/hooks/useApi"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
@@ -35,6 +35,14 @@ export default function ProfilePage() {
   const router = useRouter()
   const { data: profile, loading: profileLoading, refetch } = useFetch(() => authApi.getProfile(), [])
   const { execute: updateProfile, loading: updateLoading } = useApi(authApi.updateProfile)
+
+  // Prefetched alongside the profile so the Notifications tab never shows
+  // a loading skeleton — by the time someone clicks it, this has already
+  // resolved in parallel with the rest of the page's initial load.
+  const { data: notificationPrefs, refetch: refetchNotificationPrefs } = useFetch(
+    () => settingsApi.getNotificationPreferences(),
+    []
+  )
 
   const [activeSection, setActiveSection] = useState<Section>("personal")
   const [isEditing, setIsEditing] = useState(false)
@@ -199,44 +207,70 @@ export default function ProfilePage() {
   return (
     <>
       <Header title="Profile" subtitle="Manage your account settings" />
-      <div className="p-6 space-y-6">
+      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
         {success && (
-          <div className="rounded-2xl bg-success/10 border border-success/50 p-4 text-success">
+          <div className="rounded-2xl bg-success/10 border border-success/50 p-3 sm:p-4 text-success text-sm">
             ✓ {success}
           </div>
         )}
         {error && (
-          <div className="rounded-2xl bg-destructive/10 border border-destructive/50 p-4 text-destructive">
+          <div className="rounded-2xl bg-destructive/10 border border-destructive/50 p-3 sm:p-4 text-destructive text-sm">
             {error}
           </div>
         )}
 
         {/* Avatar header — always visible regardless of section */}
-        <div className="glass rounded-2xl p-6 flex items-center gap-4">
-          <div className="relative">
-            <Avatar className="w-20 h-20">
+        <div className="glass rounded-2xl p-4 sm:p-6 flex items-center gap-3 sm:gap-4">
+          <div className="relative shrink-0">
+            <Avatar className="w-16 h-16 sm:w-20 sm:h-20">
               <AvatarImage src={profile?.profile_picture_url || undefined} alt={profile?.full_name} />
-              <AvatarFallback className="bg-primary/20 text-primary text-xl font-bold">
+              <AvatarFallback className="bg-primary/20 text-primary text-lg sm:text-xl font-bold">
                 {getInitials(profile?.first_name, profile?.last_name)}
               </AvatarFallback>
             </Avatar>
             <button
               onClick={() => setShowAvatarModal(true)}
-              className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground hover:bg-primary/90"
+              className="absolute -bottom-1 -right-1 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground hover:bg-primary/90"
             >
-              <Camera className="w-4 h-4" />
+              <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
           </div>
-          <div>
-            <h2 className="text-lg font-semibold text-foreground">{profile?.full_name || "..."}</h2>
-            <p className="text-sm text-muted-foreground">{profile?.email}</p>
+          <div className="min-w-0">
+            <h2 className="text-base sm:text-lg font-semibold text-foreground truncate">{profile?.full_name || "..."}</h2>
+            <p className="text-xs sm:text-sm text-muted-foreground truncate">{profile?.email}</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Section Navigation */}
+        <div className="lg:grid lg:grid-cols-4 lg:gap-6">
+          {/* Section Navigation — sidebar on desktop, horizontal tabs on mobile */}
           <div className="lg:col-span-1">
-            <div className="glass rounded-2xl p-4 space-y-2 sticky top-24">
+            {/* Mobile: horizontal scrollable tabs */}
+            <div className="lg:hidden -mx-4 px-4 mb-4">
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 glass rounded-xl p-1.5">
+                {sections.map((s) => {
+                  const Icon = s.icon
+                  return (
+                    <button
+                      key={s.id}
+                      onClick={() => setActiveSection(s.id)}
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition shrink-0 ${
+                        activeSection === s.id
+                          ? s.id === "danger"
+                            ? "bg-destructive/20 text-destructive"
+                            : "bg-primary/20 text-primary"
+                          : "text-muted-foreground hover:bg-secondary/50"
+                      }`}
+                    >
+                      <Icon className="w-4 h-4" />
+                      {s.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Desktop: vertical sidebar nav */}
+            <div className="hidden lg:block glass rounded-2xl p-4 space-y-2 sticky top-24">
               {sections.map((s) => {
                 const Icon = s.icon
                 return (
@@ -260,13 +294,13 @@ export default function ProfilePage() {
           </div>
 
           {/* Main Content */}
-          <div className="lg:col-span-3 space-y-6">
+          <div className="lg:col-span-3 space-y-4 sm:space-y-6 mt-0">
             {/* Personal Information */}
             {activeSection === "personal" && (
               <>
-                <div className="glass rounded-2xl p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-lg font-semibold text-foreground">Personal Information</h3>
+                <div className="glass rounded-2xl p-4 sm:p-6">
+                  <div className="flex items-center justify-between mb-4 sm:mb-6">
+                    <h3 className="text-base sm:text-lg font-semibold text-foreground">Personal Information</h3>
                     {!isEditing ? (
                       <Button variant="outline" size="sm" onClick={() => setIsEditing(true)} className="border-border text-foreground">
                         <Edit className="w-4 h-4 mr-2" /> Edit
@@ -329,9 +363,9 @@ export default function ProfilePage() {
 
                 {/* Business Info — travelers only */}
                 {isTraveler && (
-                  <div className="glass rounded-2xl p-6">
-                    <div className="flex items-center justify-between mb-6">
-                      <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                  <div className="glass rounded-2xl p-4 sm:p-6">
+                    <div className="flex items-center justify-between mb-4 sm:mb-6">
+                      <h3 className="text-base sm:text-lg font-semibold text-foreground flex items-center gap-2">
                         <Building2 className="w-5 h-5" /> Business Information
                       </h3>
                       {!isEditingBusiness ? (
@@ -399,16 +433,23 @@ export default function ProfilePage() {
 
             {/* Notifications */}
             {activeSection === "notifications" && (
-              <div className="glass rounded-2xl p-6">
-                <h3 className="text-lg font-semibold text-foreground mb-6">Notification Preferences</h3>
-                <NotificationPreferencesForm key={refreshKey} onSuccess={() => setRefreshKey((k) => k + 1)} />
+              <div className="glass rounded-2xl p-4 sm:p-6">
+                <h3 className="text-base sm:text-lg font-semibold text-foreground mb-4 sm:mb-6">Notification Preferences</h3>
+                <NotificationPreferencesForm
+                  key={refreshKey}
+                  initialData={notificationPrefs}
+                  onSuccess={() => {
+                    setRefreshKey((k) => k + 1)
+                    refetchNotificationPrefs()
+                  }}
+                />
               </div>
             )}
 
             {/* Security */}
             {activeSection === "security" && (
-              <div className="glass rounded-2xl p-6 space-y-6">
-                <h3 className="text-lg font-semibold text-foreground">Security Settings</h3>
+              <div className="glass rounded-2xl p-4 sm:p-6 space-y-4 sm:space-y-6">
+                <h3 className="text-base sm:text-lg font-semibold text-foreground">Security Settings</h3>
 
                 {/* Password */}
                 <div className="border border-border rounded-xl p-4 space-y-4">
@@ -497,7 +538,7 @@ export default function ProfilePage() {
 
             {/* Delete Account */}
             {activeSection === "danger" && (
-              <div className="glass rounded-2xl p-6 space-y-4 border border-destructive/30">
+              <div className="glass rounded-2xl p-4 sm:p-6 space-y-4 border border-destructive/30">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-destructive/20 flex items-center justify-center">
                     <AlertTriangle className="w-5 h-5 text-destructive" />

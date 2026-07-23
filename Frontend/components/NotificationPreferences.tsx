@@ -8,48 +8,51 @@ import {
   ApiErrorClass,
 } from '@/lib/api/types';
 
-export const NotificationPreferencesForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
-  const [preferences, setPreferences] =
-    useState<NotificationPreferencesResponse | null>(null);
-  const [formData, setFormData] = useState<NotificationPreferences>({
-    email_notifications: true,
-    sms_notifications: true,
-    push_notifications: true,
-    booking_updates: true,
-    delivery_updates: true,
-    payment_updates: true,
-    promotional_emails: false,
-  });
-  const [loading, setLoading] = useState(true);
+const defaultFormData: NotificationPreferences = {
+  email_notifications: true,
+  sms_notifications: true,
+  push_notifications: true,
+  booking_updates: true,
+  delivery_updates: true,
+  payment_updates: true,
+  promotional_emails: false,
+};
+
+const toFormData = (data: NotificationPreferencesResponse): NotificationPreferences => ({
+  email_notifications: data.email_notifications,
+  sms_notifications: data.sms_notifications,
+  push_notifications: data.push_notifications,
+  booking_updates: data.booking_updates,
+  delivery_updates: data.delivery_updates,
+  payment_updates: data.payment_updates,
+  promotional_emails: data.promotional_emails,
+});
+
+export const NotificationPreferencesForm: React.FC<{
+  onSuccess?: () => void;
+  /**
+   * Preferences fetched by the parent page ahead of time (in parallel
+   * with the rest of the page's data), so this component never needs
+   * its own loading state or skeleton — it just renders once the
+   * parent's prefetch has resolved.
+   */
+  initialData?: NotificationPreferencesResponse | null;
+}> = ({ onSuccess, initialData }) => {
+  const [formData, setFormData] = useState<NotificationPreferences>(
+    initialData ? toFormData(initialData) : defaultFormData
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  // If the parent's prefetch resolves after this component has already
+  // mounted (e.g. the tab was clicked before the network response
+  // landed), sync it in — still no skeleton, just an update in place.
   useEffect(() => {
-    fetchPreferences();
-  }, []);
-
-  const fetchPreferences = async () => {
-    try {
-      setError(null);
-      const data = await settingsApi.getNotificationPreferences();
-      setPreferences(data);
-      setFormData({
-        email_notifications: data.email_notifications,
-        sms_notifications: data.sms_notifications,
-        push_notifications: data.push_notifications,
-        booking_updates: data.booking_updates,
-        delivery_updates: data.delivery_updates,
-        payment_updates: data.payment_updates,
-        promotional_emails: data.promotional_emails,
-      });
-    } catch (err) {
-      const error = err as ApiErrorClass;
-      setError(error.message || 'Failed to load preferences');
-    } finally {
-      setLoading(false);
+    if (initialData) {
+      setFormData(toFormData(initialData));
     }
-  };
+  }, [initialData]);
 
   const handleToggle = (key: keyof NotificationPreferences) => {
     setFormData((prev) => ({
@@ -69,7 +72,6 @@ export const NotificationPreferencesForm: React.FC<{ onSuccess?: () => void }> =
       await settingsApi.updateNotificationPreferences(formData);
       setSuccess('Preferences updated successfully');
       onSuccess?.();
-      await fetchPreferences();
     } catch (err) {
       const error = err as ApiErrorClass;
       setError(error.message || 'Failed to save preferences');
@@ -77,16 +79,6 @@ export const NotificationPreferencesForm: React.FC<{ onSuccess?: () => void }> =
       setSaving(false);
     }
   };
-
-  if (loading) {
-    return (
-      <div className="space-y-4">
-        {[...Array(7)].map((_, i) => (
-          <div key={i} className="h-12 bg-gray-200 rounded animate-pulse" />
-        ))}
-      </div>
-    );
-  }
 
   const PreferenceToggle = ({
     label,
@@ -99,20 +91,21 @@ export const NotificationPreferencesForm: React.FC<{ onSuccess?: () => void }> =
     value: boolean;
     onChange: () => void;
   }) => (
-    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
-      <div className="flex-1">
-        <label className="block font-medium text-gray-900">{label}</label>
-        <p className="text-sm text-gray-600">{description}</p>
+    <div className="flex items-center justify-between gap-3 p-3 sm:p-4 border border-border rounded-xl hover:bg-secondary/30 transition-colors">
+      <div className="flex-1 min-w-0">
+        <label className="block font-medium text-foreground text-sm sm:text-base">{label}</label>
+        <p className="text-xs sm:text-sm text-muted-foreground">{description}</p>
       </div>
       <button
+        type="button"
         onClick={onChange}
-        className={`ml-4 flex-shrink-0 w-12 h-6 rounded-full transition-colors ${
-          value ? 'bg-blue-600' : 'bg-gray-300'
+        className={`shrink-0 w-11 h-6 rounded-full transition-colors relative ${
+          value ? 'bg-primary' : 'bg-secondary'
         }`}
       >
         <div
-          className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${
-            value ? 'translate-x-6' : 'translate-x-0.5'
+          className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+            value ? 'translate-x-5' : 'translate-x-0.5'
           }`}
         />
       </button>
@@ -120,25 +113,25 @@ export const NotificationPreferencesForm: React.FC<{ onSuccess?: () => void }> =
   );
 
   return (
-    <form onSubmit={handleSave} className="space-y-6">
+    <form onSubmit={handleSave} className="space-y-5 sm:space-y-6">
       {/* Alerts */}
       {error && (
-        <div className="rounded-lg bg-red-50 p-4 border border-red-200 text-red-700">
+        <div className="rounded-xl bg-destructive/10 p-3 sm:p-4 border border-destructive/50 text-destructive text-sm">
           {error}
         </div>
       )}
       {success && (
-        <div className="rounded-lg bg-green-50 p-4 border border-green-200 text-green-700">
+        <div className="rounded-xl bg-success/10 p-3 sm:p-4 border border-success/50 text-success text-sm">
           ✓ {success}
         </div>
       )}
 
       {/* Channel Preferences */}
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <h4 className="text-sm sm:text-base font-semibold text-foreground mb-3 sm:mb-4">
           Notification Channels
-        </h3>
-        <div className="space-y-3">
+        </h4>
+        <div className="space-y-2.5 sm:space-y-3">
           <PreferenceToggle
             label="Email Notifications"
             description="Receive updates via email"
@@ -162,10 +155,10 @@ export const NotificationPreferencesForm: React.FC<{ onSuccess?: () => void }> =
 
       {/* Event Categories */}
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <h4 className="text-sm sm:text-base font-semibold text-foreground mb-3 sm:mb-4">
           Event Types
-        </h3>
-        <div className="space-y-3">
+        </h4>
+        <div className="space-y-2.5 sm:space-y-3">
           <PreferenceToggle
             label="Booking Updates"
             description="Notifications about booking requests and changes"
@@ -194,11 +187,11 @@ export const NotificationPreferencesForm: React.FC<{ onSuccess?: () => void }> =
       </div>
 
       {/* Save Button */}
-      <div className="flex justify-end pt-4 border-t">
+      <div className="flex justify-end pt-4 border-t border-border">
         <button
           type="submit"
           disabled={saving}
-          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition font-medium"
+          className="px-5 sm:px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 transition font-medium text-sm"
         >
           {saving ? 'Saving...' : 'Save Preferences'}
         </button>

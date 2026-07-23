@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
   Search,
-  Filter,
   Package,
   MapPin,
   MoreVertical,
@@ -35,6 +34,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { tripsApi } from "@/lib/api"
+import { StatusFilterBar } from "@/components/dashboard/status-filter-bar"
 import { Booking, BookingStatus } from "@/lib/api/types"
 import { useFetch } from "@/hooks/useApi"
 import { CreateDisputeModal } from "@/components/dashboard/create-dispute-modal"
@@ -225,20 +225,12 @@ export default function BookingsPage() {
           {/* Filters and Search */}
           <div className="glass rounded-2xl p-3 sm:p-4 mb-4">
             <div className="flex flex-col md:flex-row gap-3 sm:gap-4 items-stretch md:items-center justify-between">
-              <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 -mx-1 px-1">
-                {bookingStatusFilters.map((filter) => (
-                  <button
-                    key={filter}
-                    onClick={() => setActiveFilter(filter)}
-                    className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition-all ${activeFilter === filter
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-secondary/50 text-muted-foreground hover:text-foreground hover:bg-secondary"
-                      }`}
-                  >
-                    {filter}
-                  </button>
-                ))}
-              </div>
+              <StatusFilterBar
+                filters={bookingStatusFilters}
+                active={activeFilter}
+                onChange={setActiveFilter}
+                formatLabel={(f) => f === "All" ? f : f.charAt(0).toUpperCase() + f.slice(1).replace(/_/g, " ")}
+              />
               <div className="flex items-center gap-2 sm:gap-3 w-full md:w-auto">
                 <div className="relative flex-1 md:w-64">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -249,9 +241,6 @@ export default function BookingsPage() {
                     className="pl-10 bg-input border-border text-foreground placeholder:text-muted-foreground text-sm"
                   />
                 </div>
-                <Button variant="outline" size="icon" className="border-border text-muted-foreground hover:text-foreground shrink-0">
-                  <Filter className="w-4 h-4" />
-                </Button>
               </div>
             </div>
           </div>
